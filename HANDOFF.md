@@ -271,9 +271,31 @@ where you left off.
 
 **Last updated:** 2026-11-09, by Aditya.
 
-**Done:** repo public with `main` protected; dataset and roles decided; section 5 contract agreed;
-evaluation harness merged with a self-check (`python -m eval.test_harness`); raw TOP CSVs
-counted; leakage columns identified.
+**Done:** repo public with `main` protected (1 approving review required); dataset and roles
+decided; section 5 contract agreed, now including `split_valid.npy`; evaluation harness merged
+with a self-check (`python -m eval.test_harness`); baselines written and tested on fake data;
+raw TOP CSVs counted; leakage columns identified; Phase I decision made (report all three).
+
+**Where we stopped (2026-11-09, end of Aditya's session):**
+- PR #3 (section 5 agreed, status section) and PR #4 (baselines, `split_valid`, `requirements.txt`)
+  are OPEN with no reviews. Ananya is the only other collaborator, so she has to approve them.
+  Merge #3 first. #4 is stacked on #3's branch (`aditya/section5-agreed`), so its diff shrinks
+  once #3 is in. Until both merge, `main` does not have the contract status, `split_valid`,
+  or the baselines.
+- Aditya's local checkout was on branch `aditya/baselines`. After #3 merges: `git checkout main`,
+  `git pull`, and if #4 shows conflicts, rebase `aditya/baselines` onto `main`.
+- Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
+  that session. It was blocked once already. Aditya can still choose to do it.
+- No activity from Ananya yet as of this update: no branches, reviews, or comments. We have not
+  verified that she has seen the invite or the PRs, nor that she agreed to `split_valid`.
+  Check `gh pr list` and `git branch -r` first.
+- `results/results.csv` does not exist yet. No real numbers have been produced.
+
+**Not verified, do not quote yet:**
+- HINT's published PR-AUC (0.57 / 0.65 / 0.81) and the metric definition HINT uses. sklearn's
+  `average_precision_score` is the step-wise version and may differ slightly.
+- XGBoost settings (200 trees, depth 4) are untuned defaults, so the baselines are a first floor.
+- Trial cost figures for the decision analysis (section 10) have no source yet.
 
 **Getting the raw data** (gitignored, ~40 MB, run from the repo root):
 
