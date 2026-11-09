@@ -15,7 +15,9 @@ inputs and a temporal split. It is harder and more credible.
 
 ## Dataset
 
-TOP benchmark (Fu et al.), original release. Version: _TBD, see HANDOFF.md section 9._
+TOP benchmark (Fu et al.), original release, using its official temporal split: train on
+trials completed before 2014, test on trials that started in 2014 or later. Baselines are
+only compared against results computed on this same version.
 
 ## Status
 
