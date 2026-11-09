@@ -64,8 +64,18 @@ between them.
   Trials that started before 2014 and finished in/after 2014 are dropped by that script.
 - **Not using:** TrialBench (Chen et al. 2024). Random 80/20 split and mixed label sources.
 - **Decided by:** Aditya, 2026-11-09
-- **Still to do (Person A):** count the trials per phase from the actual CSVs and record them here.
-  Secondary sources disagree (1,787/6,102/4,576 vs 1,160/4,449/3,436).
+- **Counted from the shipped CSVs (2026-11-09)**, train / valid / test, positive rate in brackets:
+  - Phase I: 1044 (0.57) / 117 (0.57) / 627 (0.55) = 1788
+  - Phase II: 4005 (0.48) / 446 (0.47) / 1654 (0.56) = 6105
+  - Phase III: 3094 (0.65) / 344 (0.67) / 1146 (0.75) = 4584
+
+  These are close to the 1,787 / 6,102 / 4,576 in the MediTab table. The other set I found
+  (1,160 / 4,449 / 3,436) does not match this release.
+- **Leakage warning:** the CSVs contain `status` and `why_stop` columns. They describe what
+  happened to the trial, so they are NOT design-time information. Never use them as features.
+  Features come only from `smiless`, `icdcodes`/`diseases` and `criteria`.
+- **Test set drifts:** Phase III positive rate rises from 0.65 (train) to 0.75 (test). Report
+  PR-AUC with that in mind, since a model's PR-AUC baseline rises with the positive rate.
 
 Only compare our numbers against results computed on the same version. State the version
 in the README.
