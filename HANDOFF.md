@@ -58,8 +58,14 @@ Two versions of this dataset are in circulation. The original Fu et al. release,
 2024 update from Chen et al. used by TrialBench and later work. Published baselines differ
 between them.
 
-- **Version we are using:** _TBD — fill this in_
-- **Decided by:** _name, date_
+- **Version we are using:** Original Fu et al. TOP release (`futianfan/clinical-trial-outcome-prediction`),
+  using the shipped `data/phase_{I,II,III}_{train,valid,test}.csv`. Split per `benchmark/data_split.py`:
+  train/valid = completed before 2014 (valid is a random 10% of that), test = started 2014 or later.
+  Trials that started before 2014 and finished in/after 2014 are dropped by that script.
+- **Not using:** TrialBench (Chen et al. 2024). Random 80/20 split and mixed label sources.
+- **Decided by:** Aditya, 2026-11-09
+- **Still to do (Person A):** count the trials per phase from the actual CSVs and record them here.
+  Secondary sources disagree (1,787/6,102/4,576 vs 1,160/4,449/3,436).
 
 Only compare our numbers against results computed on the same version. State the version
 in the README.
@@ -190,14 +196,14 @@ Append here. Newest at the bottom. One line each.
 
 | Date | Decision | Who |
 |---|---|---|
-| | Dataset version: | |
+| 2026-11-09 | Dataset version: original Fu et al. TOP, official 2014 temporal split (not TrialBench) | Aditya |
 | | Person A / Person B assignment: | |
 
 ---
 
 ## 10. Open questions
 
-- [ ] Which dataset version (section 3)
+- [x] Which dataset version (section 3): Fu et al. original, decided 2026-11-09
 - [ ] Do we report Phase I at all, or focus on II and III where the signal is stronger?
 - [ ] Cost assumptions for the decision analysis — where do we source trial cost figures?
 
