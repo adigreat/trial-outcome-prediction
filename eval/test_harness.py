@@ -14,7 +14,7 @@ def fake_contract(folder, n=300, seed=0):
     a = {"drug_features": r.random((n, 8)), "disease_features": r.random((n, 4)),
          "text_features": r.random((n, 6)), "trial_ids": np.array([f"NCT{i:08d}" for i in range(n)]),
          "labels": labels, "phase": r.integers(1, 4, n),
-         "split_train": np.arange(0, 200), "split_test": np.arange(200, n)}
+         "split_train": np.arange(0, 180), "split_valid": np.arange(180, 200), "split_test": np.arange(200, n)}
     for k in CONTRACT:
         np.save(Path(folder) / f"{k}.npy", a[k])
     return a
@@ -52,6 +52,15 @@ def test_all():
         except AssertionError:
             pass
         np.save(t / "trial_ids.npy", a["trial_ids"]); np.save(t / "phase.npy", a["phase"])
+
+        # train/valid overlap must be caught
+        np.save(t / "split_valid.npy", np.arange(170, 200))
+        try:
+            load_contract(t)
+            raise SystemExit("train/valid overlap was not caught")
+        except AssertionError:
+            pass
+        np.save(t / "split_valid.npy", a["split_valid"])
 
         # misaligned arrays must fail loudly
         np.save(t / "labels.npy", a["labels"][:-1])

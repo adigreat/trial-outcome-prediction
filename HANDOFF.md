@@ -124,8 +124,9 @@ data/processed/
   trial_ids.npy           # (n_trials,)  — alignment key, same order as all of the above
   labels.npy              # (n_trials,)  — 1 = success, 0 = failure
   phase.npy               # (n_trials,)  — 1, 2, or 3
-  split_train.npy         # indices into the arrays above
-  split_test.npy          # indices
+  split_train.npy         # indices into the arrays above (official *_train.csv rows)
+  split_valid.npy         # indices (official *_valid.csv rows) — added 2026-11-09
+  split_test.npy          # indices (official *_test.csv rows)
 ```
 
 Every array is row-aligned by index. `trial_ids.npy` is the ground truth for alignment —
@@ -142,8 +143,8 @@ If A changes a shape or a filename, it goes in section 9 and B gets told before 
 - **Every row's data comes from the CSVs' `smiless`, `icdcodes`/`diseases` and `criteria`
   columns only.** Never `status` or `why_stop` (section 3, leakage warning).
 - **Each phase is evaluated separately** on its own official test file, as HINT does.
-- **`split_train` = the official `*_train.csv` rows, `split_test` = the official `*_test.csv`
-  rows.** The official `*_valid.csv` rows are not in the contract yet; see section 10.
+- **`split_train` / `split_valid` / `split_test` = the official `*_train.csv` / `*_valid.csv` /
+  `*_test.csv` rows.** The three index sets must not overlap. Tune on valid, report on test.
 - **B's checker:** `eval.harness.load_contract("data/processed")` validates all of the above.
   A should run it on the arrays before telling B they are ready.
 
@@ -226,16 +227,17 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-09 | Eval harness merged (`eval/harness.py`, PR #2). Results CSV has two extra columns, `n` and `pos_rate` | Aditya |
 | 2026-11-09 | `.npy` files are not shared through git. Each person regenerates them locally with a script in `features/` from the public TOP CSVs | Aditya |
 | 2026-11-09 | Repo made public. Branch protection on `main` enabled; all changes go through a PR | Aditya |
+| 2026-11-09 | Contract gains `split_valid.npy` (official valid rows). `load_contract` now requires it and checks the three splits do not overlap. Ananya must produce it | Aditya (Ananya to confirm) |
+| 2026-11-09 | Report all three phases, Phase I included. Phase I is the smallest (627 test trials), so show `n` beside every number and say it is noisy. Dropping it would look like cherry-picking and HINT reports it | Aditya |
+| 2026-11-09 | Baselines in `models/baselines.py` (logreg, xgboost). One model per phase, fit on train, logged on valid and test. Project venv `.venv/` from `requirements.txt` | Aditya |
 
 ---
 
 ## 10. Open questions
 
 - [x] Which dataset version (section 3): Fu et al. original, decided 2026-11-09
-- [ ] **Validation set.** The contract has no validation split but TOP ships `*_valid.csv`.
-  Proposal: add `split_valid.npy` (the official valid rows), keep `split_train` train-only.
-  Ananya to confirm before building the arrays; Aditya then adds it to the harness checks.
-- [ ] Do we report Phase I at all, or focus on II and III where the signal is stronger?
+- [x] Validation set: `split_valid.npy` added to the contract and the harness (2026-11-09).
+- [x] Phase I: report all three phases, flag Phase I as noisy (section 9, 2026-11-09).
 - [ ] Cost assumptions for the decision analysis — where do we source trial cost figures?
 
 ---
@@ -283,17 +285,21 @@ done; done
 ```
 
 **Next up, Person A (Ananya), in `features/`:**
-1. Resolve the validation-set question in section 10.
+1. Validation set is decided: also write `split_valid.npy` (section 5).
 2. Script that reads the nine CSVs and writes `trial_ids`, `labels`, `phase`, `split_train`,
-   `split_test` to `data/processed/`. Row order must be identical across all arrays.
+   `split_valid`, `split_test` to `data/processed/`. Row order must be identical across all arrays.
 3. Morgan fingerprints into `drug_features.npy` **first**, so B is unblocked. Some trials list
    several drugs in `smiless`: decide how to combine them and write it in section 9.
 4. Run `eval.harness.load_contract("data/processed")`; if it passes, tell B.
 5. Then ICD embeddings, then PubMedBERT text embeddings (2 rows have empty `criteria`).
 
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
-1. Wait for fingerprints; meanwhile build the baseline scripts against fake arrays.
-2. Logistic regression and XGBoost per phase, logged through `eval.harness.evaluate`.
+1. DONE: `models/baselines.py` (logreg + xgboost per phase), tested on fake arrays with
+   `python -m models.test_baselines`. Needs the real arrays to produce real numbers.
+2. When Ananya ships fingerprints: `python -m models.baselines --blocks drug`, then review the
+   first real rows in `results/results.csv`.
+3. Setup for a fresh clone: `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt`
+   (Windows; `.venv/bin/pip` elsewhere).
 
 **Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
 the other person approves. Never push to `main`.

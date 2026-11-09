@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 CONTRACT = ["drug_features", "disease_features", "text_features", "trial_ids",
-            "labels", "phase", "split_train", "split_test"]
+            "labels", "phase", "split_train", "split_valid", "split_test"]
 COLUMNS = ["date", "config", "phase", "pr_auc", "roc_auc", "n", "pos_rate", "notes"]
 RESULTS = Path(__file__).resolve().parent.parent / "results" / "results.csv"
 
@@ -23,9 +23,11 @@ def load_contract(folder="data/processed"):
     assert len(set(zip(d["trial_ids"].tolist(), d["phase"].tolist()))) == n, "duplicate (trial_id, phase) rows"
     assert set(np.unique(d["labels"])) <= {0, 1}, "labels must be 0/1"
     assert set(np.unique(d["phase"])) <= {1, 2, 3}, "phase must be 1/2/3"
-    tr, te = d["split_train"], d["split_test"]
-    assert tr.min() >= 0 and te.min() >= 0 and tr.max() < n and te.max() < n, "split index out of range"
-    assert not set(tr.tolist()) & set(te.tolist()), "train and test overlap"
+    tr, va, te = d["split_train"], d["split_valid"], d["split_test"]
+    for s in (tr, va, te):
+        assert s.min() >= 0 and s.max() < n, "split index out of range"
+    assert not (set(tr.tolist()) & set(va.tolist()) or set(tr.tolist()) & set(te.tolist())
+                or set(va.tolist()) & set(te.tolist())), "train/valid/test overlap"
     return d
 
 
