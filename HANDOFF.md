@@ -105,8 +105,8 @@ section 6. Neither person owns both.
 
 | Role | Who |
 |---|---|
-| Person A | _TBD_ |
-| Person B | _TBD_ |
+| Person A (data and features) | Ananya (`ananyabiradar`) |
+| Person B (modelling and evaluation) | Aditya (`adigreat`) |
 
 ---
 
@@ -207,7 +207,7 @@ Append here. Newest at the bottom. One line each.
 | Date | Decision | Who |
 |---|---|---|
 | 2026-11-09 | Dataset version: original Fu et al. TOP, official 2014 temporal split (not TrialBench) | Aditya |
-| | Person A / Person B assignment: | |
+| 2026-11-09 | Person A (data and features) = Ananya, Person B (modelling and eval) = Aditya | Aditya |
 
 ---
 
