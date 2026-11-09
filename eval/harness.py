@@ -19,7 +19,8 @@ def load_contract(folder="data/processed"):
     n = len(d["trial_ids"])
     for k in ("drug_features", "disease_features", "text_features", "labels", "phase"):
         assert len(d[k]) == n, f"{k} has {len(d[k])} rows, trial_ids has {n}"
-    assert len(set(d["trial_ids"].tolist())) == n, "duplicate trial_ids"
+    # Phase 1/2 and 2/3 trials appear in two phase files, so the key is (trial_id, phase), not trial_id
+    assert len(set(zip(d["trial_ids"].tolist(), d["phase"].tolist()))) == n, "duplicate (trial_id, phase) rows"
     assert set(np.unique(d["labels"])) <= {0, 1}, "labels must be 0/1"
     assert set(np.unique(d["phase"])) <= {1, 2, 3}, "phase must be 1/2/3"
     tr, te = d["split_train"], d["split_test"]

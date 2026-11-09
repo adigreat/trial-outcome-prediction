@@ -39,6 +39,20 @@ def test_all():
         r1 = evaluate([1, 1, 1], [0.2, 0.5, 0.9], [1, 1, 1], "single", path=t / "r2.csv")
         assert r1[0]["pr_auc"] == ""
 
+        # same trial in two phases is legal; the same (trial, phase) twice is not
+        ids, ph = a["trial_ids"].copy(), a["phase"].copy()
+        ids[1], ph[1] = ids[0], (ph[0] % 3) + 1
+        np.save(t / "trial_ids.npy", ids); np.save(t / "phase.npy", ph)
+        load_contract(t)
+        ph[1] = ph[0]
+        np.save(t / "phase.npy", ph)
+        try:
+            load_contract(t)
+            raise SystemExit("duplicate (trial, phase) was not caught")
+        except AssertionError:
+            pass
+        np.save(t / "trial_ids.npy", a["trial_ids"]); np.save(t / "phase.npy", a["phase"])
+
         # misaligned arrays must fail loudly
         np.save(t / "labels.npy", a["labels"][:-1])
         try:
