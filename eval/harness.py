@@ -9,7 +9,8 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 
 CONTRACT = ["drug_features", "disease_features", "text_features", "trial_ids",
             "labels", "phase", "split_train", "split_valid", "split_test"]
-COLUMNS = ["date", "config", "phase", "pr_auc", "roc_auc", "n", "pos_rate", "notes"]
+COLUMNS = ["date", "config", "phase", "pr_auc", "pr_auc_hint", "roc_auc", "n", "pos_rate", "notes"]
+HINT_THRESHOLD = 0.5  # HINT scores average precision on predictions cut to 0/1 here (HANDOFF section 13)
 RESULTS = Path(__file__).resolve().parent.parent / "results" / "results.csv"
 
 
@@ -51,6 +52,8 @@ def evaluate(y_true, y_score, phase, config, notes="", seed=None, path=RESULTS):
             "date": date.today().isoformat(), "config": json.dumps(cfg, sort_keys=True),
             "phase": int(p),
             "pr_auc": round(float(average_precision_score(y, y_score[m])), 4) if both else "",
+            # HINT-style: same function on 0/1 predictions. Only for comparing with HINT's paper.
+            "pr_auc_hint": round(float(average_precision_score(y, y_score[m] >= HINT_THRESHOLD)), 4) if both else "",
             "roc_auc": round(float(roc_auc_score(y, y_score[m])), 4) if both else "",
             "n": int(m.sum()), "pos_rate": round(float(y.mean()), 4), "notes": notes,
         })
