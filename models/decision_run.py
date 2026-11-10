@@ -21,7 +21,7 @@ import numpy as np
 
 from eval.decision import best_threshold, threshold_table
 from eval.harness import load_contract
-from models.baselines import MODELS
+from models.baselines import MODELS, fit, load_blocks
 
 OUT = Path(__file__).resolve().parent.parent / "results" / "decision_analysis.csv"
 TRIAL_COST_MUSD = {1: 3.80, 2: 13.35, 3: 19.89}
@@ -32,7 +32,7 @@ COLUMNS = ["date", "config", "phase", "trial_cost_musd", "loss_multiple", "thres
 
 def run(folder="data/processed", model="xgboost", blocks=("disease",), seed=0, path=OUT):
     d = load_contract(folder)
-    X = np.hstack([d[f"{b}_features"].reshape(len(d["labels"]), -1) for b in blocks])
+    X, dims = load_blocks(d, blocks)
     y, phase = d["labels"], d["phase"]
     cfg = json.dumps({"model": model, "blocks": list(blocks), "seed": seed}, sort_keys=True)
     out = []
@@ -40,7 +40,7 @@ def run(folder="data/processed", model="xgboost", blocks=("disease",), seed=0, p
         tr, va, te = (d[f"split_{s}"][phase[d[f"split_{s}"]] == p] for s in ("train", "valid", "test"))
         if min(len(va), len(te)) == 0 or len(set(y[tr].tolist())) < 2:
             continue
-        m = MODELS[model](seed).fit(X[tr], y[tr])
+        m = fit(model, seed, X, y, tr, va, dims)
         p_va, p_te = m.predict_proba(X[va])[:, 1], m.predict_proba(X[te])[:, 1]
         cost = TRIAL_COST_MUSD[p]
         for mult in LOSS_MULTIPLES:
@@ -65,7 +65,7 @@ def run(folder="data/processed", model="xgboost", blocks=("disease",), seed=0, p
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="xgboost", choices=list(MODELS))
+    ap.add_argument("--model", default="xgboost", choices=[*MODELS, "fusion"])
     ap.add_argument("--blocks", default="disease", help="comma list of drug,disease,text")
     ap.add_argument("--seed", type=int, default=0)
     a = ap.parse_args()
