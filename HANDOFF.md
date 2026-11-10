@@ -342,10 +342,10 @@ where you left off.
 
 **Last updated:** 2026-11-11, by Ananya. Ananya's session is summarised under "Where we
 stopped (2026-11-11)"; the rest of this section is still Aditya's from 2026-11-10 unless marked.
-PRs #3 to #8 are merged into `main`. #3 to #7 were admin-merged on Aditya's instruction, without a
+PRs #3 to #10 are merged into `main` (#9 and #10 on 2026-11-10/11; #10 approved by Ananya). #3 to #7 were admin-merged on Aditya's instruction, without a
 review from the other person. #8 was approved by Ananya and merged normally. **The work was
 redistributed on 2026-11-10: see the table in section 4 and the two "Next up" lists below.**
-The fusion model is built and run (branch `aditya/fusion-mlp`, see the PR list). For #6 (Ananya's features pipeline), Aditya first merged `main`
+The fusion model is built, run and merged (PR #10). For #6 (Ananya's features pipeline), Aditya first merged `main`
 into `ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was
 not changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
 
@@ -469,7 +469,7 @@ Phase I decision made (report all three).
 - XGBoost seeds 1 to 4 done for the three combinations without text.
 - HINT numbers found and the metric definition confirmed in the code (section 8).
 - README drafted, with `TODO(Aditya)` markers where the fusion write-up is his.
-- Fresh-clone test done in a clean Linux venv (see "Fresh-clone test" below). Still to do on Ananya's
+- Fresh-clone test done on a clean Linux clone (see "Fresh-clone test" below; not an empty venv). Still to do on Ananya's
   Windows-on-ARM laptop.
 - `text_features.npy` has not arrived yet.
 
@@ -554,7 +554,7 @@ python -m features.build text           # PubMedBERT, about 25 min on a 6 GB GPU
       (`python -m models.baselines --blocks <combo> --seed <n>`), and fill those rows in the README table;
    b. `python -m models.error_analysis --model fusion --blocks drug,disease,text` (D split and P/Z rule),
       and update the README error-analysis section and the paragraph in this section.
-3. Fresh-clone test on the Windows-on-ARM laptop: same steps as the Linux run below. Write down whether
+3. Fresh-clone test on the Windows-on-ARM laptop: same steps as the Linux run above, plus an empty-venv `pip install`. Write down whether
    `rdkit`, `xgboost` and `torch` install on ARM Python, or whether the x64 build under emulation is needed.
 4. Finish the README with Aditya's `TODO(Aditya)` parts once he has filled them.
 
