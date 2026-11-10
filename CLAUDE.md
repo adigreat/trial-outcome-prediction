@@ -9,3 +9,5 @@ Rules for Claude in this repo:
 - Never push to `main` or force-push. Work on a branch, open a PR, and ask before pushing, opening, or merging.
 - Use the project venv: `.venv/Scripts/python` (create it from `requirements.txt`). Run checks from the repo root:
   `python -m eval.test_harness` and `python -m models.test_baselines`.
+- With each new prompt, check for open PRs, review them, and ask for approval or merging.
+- Keep `HANDOFF.md`, `EASY_LANGUAGE.md` and `README.md` in step. Whenever the project state changes (a PR merges, results come in, a decision is made, next steps change, a bug is found), update all three in the same change, before you finish the task. A stale doc counts as a bug. `HANDOFF.md` wins if they disagree.

@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-10.
+Written for Ananya and Aditya. Last updated: 2026-11-10 (after the first real baseline run).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -71,52 +71,63 @@ Check before sending: `eval.harness.load_contract("data/processed")` must pass.
 
 **Done**
 - Dataset and roles decided, handoff format agreed.
-- Aditya's scoring code (`eval/harness.py`) is merged and passes its self-check.
-- Aditya's first models (logistic regression and XGBoost) are written and tested on fake data.
-- Raw data downloaded to Aditya's machine.
-- Claude GitHub App installed on `adigreat`.
+- Aditya's scoring code is merged. It now also logs a second PR-AUC that copies how HINT computes
+  its own (`pr_auc_hint`), so we can compare fairly later.
+- Ananya's feature pipeline is merged. Drug fingerprints and the disease encoding are ready.
+- Aditya built the arrays on his own machine and ran the first real baselines.
+- Decision-analysis code is written and tested (costs still to be chosen).
+- All the pull requests so far (#3 to #7) are merged. Aditya merged them as admin because Ananya had
+  not reviewed them yet. Ananya, please look over what landed and say if anything is wrong.
 
-**Waiting**
-- PR #3 and PR #4 are open and need Ananya's approval (`main` needs 1 review).
-- Ananya's feature files do not exist yet, so we have no real results.
+**First real numbers (test set, PR-AUC, higher is better)**
+
+| What the model sees | Phase I | Phase II | Phase III |
+|---|---|---|---|
+| Nothing (always guess "success") | 0.55 | 0.56 | 0.75 |
+| Drug only (best of 2 models) | 0.61 | 0.61 | 0.83 |
+| Disease only (best of 2 models) | 0.65 | 0.68 | 0.86 |
+| Drug + disease (best of 2 models) | 0.63 | 0.66 | 0.85 |
+
+What it means in plain words:
+- The **disease** carries more signal than the **drug** in every phase.
+- Adding the drug to the disease made it a little **worse**, not better. Probably the drug
+  fingerprint is too big and noisy for this few trials.
+- Phase III looks great only because 75% of its test trials succeed anyway. Look at the gap above
+  the "always guess success" row, not the raw number.
+- These are first, untuned, one-seed numbers. A point or two is noise.
+- We do not have a text number yet, so we cannot say how much the eligibility text helps.
+- These numbers cannot be compared with HINT's paper yet (different test set and a different way of
+  computing PR-AUC).
 
 **Not done yet**
-- Everything that needs real numbers: baselines, fusion model, ablations, error analysis,
-  decision analysis, final README.
+- The eligibility-text encoding (PubMedBERT). It needs a computer with a GPU, which is Ananya's job.
+- The fusion model, the three-way ablation, error analysis by disease area, the decision analysis
+  on real predictions, and the final README.
 
 ## 7. Next steps, why, and how
 
 ### Ananya
-1. **Review and approve PR #3, then PR #4.**
-   *Why:* `main` is locked until someone else approves. Until then, `main` does not have the
-   agreed handoff format, `split_valid`, or the baselines. Her checkout is also behind, which
-   is why her Claude thought `split_valid` had no slot.
-   *How:* open the PR on GitHub, look at the changes, click Approve. Merge #3 first.
-2. **Pull the latest code.**
-   *How:* `git checkout main` then `git pull`, after #3 and #4 are merged.
-3. **Build the fingerprints first.**
-   *Why:* it unblocks Aditya while the slower text step is still running.
-   *How:* a script in `features/` reads the nine CSVs, writes the id, label, phase and split
-   files, then drug fingerprints (Morgan, radius 2, 2048 bits, all of a trial's drugs combined).
-   Write the combining choice in `HANDOFF.md` section 9.
-4. **Check, then tell Aditya.**
-   *How:* run `eval.harness.load_contract("data/processed")`. If it passes, send the arrays.
-5. **Then the disease encoding, then the text encoding.**
-   *Why:* same order as the plan. Her Claude chose a multi-hot encoding of the ICD codes, using
-   only codes seen in train. Log that choice in section 9.
-   *How:* frozen PubMedBERT for the text. Her Claude's workspace has no GPU, so run the real
-   PubMedBERT step on a machine that has one.
+1. **Look at what was merged and answer two questions** in `HANDOFF.md` section 10.
+   *Why:* we merged your pipeline (PR #6) after fixing a small text clash in HANDOFF, and Aditya's
+   Claude needs two answers: keep or drop the 106 trials that sit in train for one phase and valid
+   for another, and whether the disease multi-hot is fine or a dense version is also wanted.
+   *How:* read section 9 and section 10 of `HANDOFF.md`, then write your answers there.
+2. **Run the PubMedBERT text step on a computer with a GPU.**
+   *Why:* it is the last missing input, and we cannot ablate or fuse the text without it.
+   *How:* `pip install -r features/requirements-text.txt`, then `python -m features.build text`
+   (it can resume if it crashes). Check `load_contract`, then tell Aditya the text block is ready.
+3. **Fix the Windows crash in `features/`.** On Windows the build stops at the very end with a
+   `UnicodeEncodeError` because the report file is written without UTF-8. Aditya got around it with
+   `PYTHONUTF8=1`. The real fix is to open that file with `encoding="utf-8"`.
 
 ### Aditya
-1. **Ask Ananya to approve PR #3 and #4.** Claude cannot do this for her.
-2. **Wait for the fingerprints, then run the first real baseline.**
-   *How:* `python -m models.baselines --blocks drug`, then read the new rows in
-   `results/results.csv`.
-3. **Open the HANDOFF research PR** (branch `aditya/handoff-research`) once the others are in.
-4. **Settle two open questions** in `HANDOFF.md` section 10:
-   - which HINT numbers are the right comparison for our dataset version,
-   - which source we use for trial cost figures.
-5. **Later:** fusion model, ablations, decision analysis.
+1. **Fusion model**, once text exists: join the blocks and train a small MLP.
+   *Why:* it is the main model of the project. *How:* needs PyTorch (not installed yet).
+2. **Ablation table:** drug / disease / text, each alone and in combination, for every phase.
+   *Why:* this is the part that makes the project ours. *How:* `python -m models.baselines --blocks ...`.
+3. **Error analysis by disease area**, then the **decision analysis** on real predictions with
+   `eval.decision.threshold_table`. We still need to choose the cost source for it.
+4. **README:** add the results and the dataset version once the model is done.
 
 ## 8. About the HINT comparison (be careful here)
 
@@ -124,6 +135,8 @@ HINT is the published model we are compared against. We probably will not beat i
 is fine. A small gap with honest ablations is a better story than a big claim.
 
 - The old numbers in `HANDOFF.md` (0.57 / 0.65 / 0.81) could not be traced to a source.
+- HINT's own code computes "PR-AUC" after turning predictions into 0/1 at 0.5, which is not the
+  usual way. We log both: `pr_auc` (usual) and `pr_auc_hint` (copies HINT).
 - The HINT arXiv paper gives PR-AUC of about 0.76 / 0.60 / 0.62 for Phase I / II / III, but on
   a **different test set** than ours, so we cannot compare directly.
 - Do not quote any HINT number until we have matched it to our dataset version.
@@ -138,6 +151,9 @@ is fine. A small gap with honest ablations is a better story than a big claim.
 - No clinical claims. This is a research prototype.
 - Before you stop for the day, update `HANDOFF.md` sections 9, 10 and 13. Each of our Claudes
   only knows what is written there.
+- Keep `HANDOFF.md`, this file and `README.md` in step. When something changes (a PR merges, a
+  result comes in, a decision is made, the next step changes), update all of them in the same
+  change. A stale doc counts as a bug. (This is a rule in `CLAUDE.md`.)
 
 ## 10. Words you might not know
 
