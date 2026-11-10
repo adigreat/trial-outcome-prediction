@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-10.
+Written for Ananya and Aditya. Last updated: 2026-11-10 (all three feature blocks built, first ablation done).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -71,52 +71,74 @@ Check before sending: `eval.harness.load_contract("data/processed")` must pass.
 
 **Done**
 - Dataset and roles decided, handoff format agreed.
-- Aditya's scoring code (`eval/harness.py`) is merged and passes its self-check.
-- Aditya's first models (logistic regression and XGBoost) are written and tested on fake data.
-- Raw data downloaded to Aditya's machine.
-- Claude GitHub App installed on `adigreat`.
+- Aditya's scoring code is merged. It also logs a second PR-AUC that copies how HINT computes its own
+  (`pr_auc_hint`), so we can compare fairly later.
+- Ananya's feature pipeline is merged. All three feature blocks now exist: drug, disease and
+  eligibility text. Aditya ran the text step on his laptop GPU (about 25 minutes).
+- First real baselines for every combination of the three blocks.
+- A first error analysis by disease area and a first decision analysis.
+- Pull requests #3 to #7 are merged. Aditya merged them as admin because Ananya had not reviewed them
+  yet. Ananya, please look over what landed and say if anything is wrong.
 
-**Waiting**
-- PR #3 and PR #4 are open and need Ananya's approval (`main` needs 1 review).
-- Ananya's feature files do not exist yet, so we have no real results.
+**The numbers (test set, PR-AUC, XGBoost, higher is better)**
+
+| What the model sees | Phase I | Phase II | Phase III |
+|---|---|---|---|
+| Nothing (always guess "success") | 0.55 | 0.56 | 0.75 |
+| Drug only | 0.61 | 0.61 | 0.83 |
+| Disease only | 0.65 | 0.68 | 0.86 |
+| Text only | 0.63 | 0.67 | 0.85 |
+| Drug + disease | 0.63 | 0.66 | 0.85 |
+| Drug + text | 0.63 | 0.69 | 0.85 |
+| Disease + text | 0.65 | 0.68 | 0.84 |
+| All three | 0.66 | 0.67 | 0.84 |
+
+What it means in plain words:
+- The **disease** and the **eligibility text** both help, by about the same amount. The **drug**
+  fingerprint helps least.
+- Putting the blocks together does **not** beat the disease alone with this simple model. That is the
+  job of the fusion model, which is next.
+- Phase III looks great only because 75% of its test trials succeed anyway. Look at the gap above
+  the "always guess success" row, not the raw number.
+- These are untuned, one-seed numbers. A point or two is noise.
+- They cannot be compared with HINT's paper yet.
+
+**Where the model struggles (error analysis)**
+- **Cancer trials are the hard ones.** They fail more often than other areas, and inside cancer the
+  model is close to guessing in Phase I.
+- In Phase III the model is too pessimistic about cancer: it expects about 41% to succeed and 60% do.
+
+**Would a sponsor act on it? (decision analysis)**
+- Not yet. If stopping a good trial by mistake costs more than about one trial's budget, the model
+  loses money or stops almost nothing. We use published average trial costs ($3.8M / $13.4M / $19.9M
+  for Phase 1 / 2 / 3) and try several guesses for what a lost success is worth.
 
 **Not done yet**
-- Everything that needs real numbers: baselines, fusion model, ablations, error analysis,
-  decision analysis, final README.
+- The fusion model (the main model), tuning, more seeds, and the final README.
 
 ## 7. Next steps, why, and how
 
 ### Ananya
-1. **Review and approve PR #3, then PR #4.**
-   *Why:* `main` is locked until someone else approves. Until then, `main` does not have the
-   agreed handoff format, `split_valid`, or the baselines. Her checkout is also behind, which
-   is why her Claude thought `split_valid` had no slot.
-   *How:* open the PR on GitHub, look at the changes, click Approve. Merge #3 first.
-2. **Pull the latest code.**
-   *How:* `git checkout main` then `git pull`, after #3 and #4 are merged.
-3. **Build the fingerprints first.**
-   *Why:* it unblocks Aditya while the slower text step is still running.
-   *How:* a script in `features/` reads the nine CSVs, writes the id, label, phase and split
-   files, then drug fingerprints (Morgan, radius 2, 2048 bits, all of a trial's drugs combined).
-   Write the combining choice in `HANDOFF.md` section 9.
-4. **Check, then tell Aditya.**
-   *How:* run `eval.harness.load_contract("data/processed")`. If it passes, send the arrays.
-5. **Then the disease encoding, then the text encoding.**
-   *Why:* same order as the plan. Her Claude chose a multi-hot encoding of the ICD codes, using
-   only codes seen in train. Log that choice in section 9.
-   *How:* frozen PubMedBERT for the text. Her Claude's workspace has no GPU, so run the real
-   PubMedBERT step on a machine that has one.
+1. **Look at what was merged and what Aditya decided.**
+   *Why:* PRs #3 to #7 went in without your review, and your two questions were answered (keep the 106
+   trials; the disease multi-hot is fine as is).
+   *How:* read sections 9, 10 and 13 of `HANDOFF.md` and say if anything is wrong.
+2. **Fix the Windows crash in `features/`.**
+   *Why:* on Windows the build stops at the end with a `UnicodeEncodeError`. Aditya got around it with
+   `PYTHONUTF8=1`.
+   *How:* open the validation report file with `encoding="utf-8"`.
+3. **Check one odd count.** Many trials carry an ICD chapter P (perinatal) or Z code. Is that really in
+   the data, or a parsing slip? (`HANDOFF.md` section 10.)
+4. **Then pick a shared task:** writing up the error analysis or the decision analysis.
 
 ### Aditya
-1. **Ask Ananya to approve PR #3 and #4.** Claude cannot do this for her.
-2. **Wait for the fingerprints, then run the first real baseline.**
-   *How:* `python -m models.baselines --blocks drug`, then read the new rows in
-   `results/results.csv`.
-3. **Open the HANDOFF research PR** (branch `aditya/handoff-research`) once the others are in.
-4. **Settle two open questions** in `HANDOFF.md` section 10:
-   - which HINT numbers are the right comparison for our dataset version,
-   - which source we use for trial cost figures.
-5. **Later:** fusion model, ablations, decision analysis.
+1. **Fusion model:** join the three blocks and train a small neural network (MLP).
+   *Why:* simple stacking did not beat the disease block alone, so we need a model that can combine them.
+   *How:* PyTorch is already installed in the project venv.
+2. **Redo the ablation, error analysis and decision analysis on the fusion model**, with several seeds.
+   *Why:* one seed is not enough to trust a difference of a point or two.
+3. **Find HINT's real PR-AUC for our dataset version** before comparing anything.
+4. **README:** add the results and the dataset version once the model is done.
 
 ## 8. About the HINT comparison (be careful here)
 
@@ -124,6 +146,8 @@ HINT is the published model we are compared against. We probably will not beat i
 is fine. A small gap with honest ablations is a better story than a big claim.
 
 - The old numbers in `HANDOFF.md` (0.57 / 0.65 / 0.81) could not be traced to a source.
+- HINT's own code computes "PR-AUC" after turning predictions into 0/1 at 0.5, which is not the
+  usual way. We log both: `pr_auc` (usual) and `pr_auc_hint` (copies HINT).
 - The HINT arXiv paper gives PR-AUC of about 0.76 / 0.60 / 0.62 for Phase I / II / III, but on
   a **different test set** than ours, so we cannot compare directly.
 - Do not quote any HINT number until we have matched it to our dataset version.
@@ -138,6 +162,9 @@ is fine. A small gap with honest ablations is a better story than a big claim.
 - No clinical claims. This is a research prototype.
 - Before you stop for the day, update `HANDOFF.md` sections 9, 10 and 13. Each of our Claudes
   only knows what is written there.
+- Keep `HANDOFF.md`, this file and `README.md` in step. When something changes (a PR merges, a
+  result comes in, a decision is made, the next step changes), update all of them in the same
+  change. A stale doc counts as a bug. (This is a rule in `CLAUDE.md`.)
 
 ## 10. Words you might not know
 
