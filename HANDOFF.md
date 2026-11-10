@@ -239,6 +239,9 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-10 | Drug = Morgan r=2, 2048 bits, OR over the trial's drugs, float32 0/1 | Ananya |
 | 2026-11-10 | Disease = ICD-10 multi-hot (chapter + 3-char category + full code, ≥5 train trials, + 3 OOV flags = 1983 dims), vocab fit on train only. The "learned embedding" is learned by B's model as a linear layer on this | Ananya |
 | 2026-11-10 | Text = frozen `microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext` (PubMedBERT), masked mean pool per criterion bullet, then [inclusion mean ‖ exclusion mean] = 1536 dims | Ananya |
+| 2026-11-10 | PRs #3, #4, #5 merged with `gh pr merge --admin` on Aditya's explicit instruction, because Ananya had not reviewed them | Aditya |
+| 2026-11-10 | Results CSV gains `pr_auc_hint`: average precision on predictions cut to 0/1 at 0.5, which is how HINT's code computes its "PR-AUC". `pr_auc` stays the standard threshold-free metric. Use `pr_auc_hint` only to compare with HINT's paper, and label it | Aditya |
+| 2026-11-10 | `eval/decision.py`: threshold table (true kills, wrong kills, net value). Costs are inputs; the source is still open (section 10) | Aditya |
 
 ---
 
@@ -288,8 +291,14 @@ where you left off.
 
 ## 13. Status and next up (update this every session)
 
-**Last updated:** 2026-11-10, by Aditya (with Claude). Research notes only: no code changed.
-Still no activity from Ananya (checked `gh pr list`, branches, reviews on 2026-11-10).
+**Last updated:** 2026-11-10, by Aditya (with Claude).
+PRs #3, #4, #5, #6 and #7 were admin-merged into `main` on Aditya's instruction, without a review from
+the other person. For #6 (Ananya's features pipeline), Aditya's Claude first merged `main` into
+`ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was not
+changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
+`main` now has the contract, `split_valid`, the baselines, the features pipeline (fingerprints and
+disease block ready, text block still a placeholder), `eval/decision.py`, the `pr_auc_hint` column and
+`EASY_LANGUAGE.md`. Her two questions for Aditya in section 10 are open.
 
 **Done:** repo public with `main` protected (1 approving review required); dataset and roles
 decided; section 5 contract agreed, now including `split_valid.npy`; evaluation harness merged
@@ -297,11 +306,8 @@ with a self-check (`python -m eval.test_harness`); baselines written and tested 
 raw TOP CSVs counted; leakage columns identified; Phase I decision made (report all three).
 
 **Where we stopped (2026-11-09, end of Aditya's session):**
-- PR #3 (section 5 agreed, status section) and PR #4 (baselines, `split_valid`, `requirements.txt`)
-  are OPEN with no reviews. Ananya is the only other collaborator, so she has to approve them.
-  Merge #3 first. #4 is stacked on #3's branch (`aditya/section5-agreed`), so its diff shrinks
-  once #3 is in. Until both merge, `main` does not have the contract status, `split_valid`,
-  or the baselines.
+- UPDATE 2026-11-10: PRs #3, #4 and #5 are merged (see the top of this section). The text below
+  this line about them being open is out of date.
 - Aditya's local checkout was on branch `aditya/baselines`. After #3 merges: `git checkout main`,
   `git pull`, and if #4 shows conflicts, rebase `aditya/baselines` onto `main`.
 - Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
@@ -341,7 +347,9 @@ for p in I II III; do for s in train valid test; do
 done; done
 ```
 
-**Next up, Person A (Ananya), in `features/`:**
+**Next up, Person A (Ananya), in `features/`:** (2026-11-10: steps 1 to 4 are DONE in PR #6, merged.
+Fingerprints and the disease block are ready. What is left: the real PubMedBERT text run on a machine
+with a GPU, then ship `text_features.npy`. The list below is the original plan.)
 1. Validation set is decided: also write `split_valid.npy` (section 5).
 2. Script that reads the nine CSVs and writes `trial_ids`, `labels`, `phase`, `split_train`,
    `split_valid`, `split_test` to `data/processed/`. Row order must be identical across all arrays.
