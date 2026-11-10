@@ -233,6 +233,12 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-09 | Contract gains `split_valid.npy` (official valid rows). `load_contract` now requires it and checks the three splits do not overlap. Ananya must produce it | Aditya (Ananya to confirm) |
 | 2026-11-09 | Report all three phases, Phase I included. Phase I is the smallest (627 test trials), so show `n` beside every number and say it is noisy. Dropping it would look like cherry-picking and HINT reports it | Aditya |
 | 2026-11-09 | Baselines in `models/baselines.py` (logreg, xgboost). One model per phase, fit on train, logged on valid and test. Project venv `.venv/` from `requirements.txt` | Aditya |
+| 2026-11-10 | Dataset pinned to TOP upstream commit `8dc0497`; the 9 CSVs are hash-checked on load. Row key is `(trial_id, phase)`; row order is phase → train/valid/test → nctid | Ananya |
+| 2026-11-10 | Contract additions (nothing renamed or reshaped): `split_valid.npy` (official TOP valid, 907 rows; `split_train` = official train only, 8143), `manifest.json`, `feature_names/`, `trial_meta.csv`, `validation_report.md` | Ananya |
+| 2026-11-10 | Blocks not built yet are written as `(n, 0)` float32 placeholders so `load_contract()` works with fingerprints alone; `manifest.json` `blocks.*.status` says `ready` or `pending` | Ananya |
+| 2026-11-10 | Drug = Morgan r=2, 2048 bits, OR over the trial's drugs, float32 0/1 | Ananya |
+| 2026-11-10 | Disease = ICD-10 multi-hot (chapter + 3-char category + full code, ≥5 train trials, + 3 OOV flags = 1983 dims), vocab fit on train only. The "learned embedding" is learned by B's model as a linear layer on this | Ananya |
+| 2026-11-10 | Text = frozen `microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext` (PubMedBERT), masked mean pool per criterion bullet, then [inclusion mean ‖ exclusion mean] = 1536 dims | Ananya |
 | 2026-11-10 | PRs #3, #4, #5 merged with `gh pr merge --admin` on Aditya's explicit instruction, because Ananya had not reviewed them | Aditya |
 | 2026-11-10 | Results CSV gains `pr_auc_hint`: average precision on predictions cut to 0/1 at 0.5, which is how HINT's code computes its "PR-AUC". `pr_auc` stays the standard threshold-free metric. Use `pr_auc_hint` only to compare with HINT's paper, and label it | Aditya |
 | 2026-11-10 | `eval/decision.py`: threshold table (true kills, wrong kills, net value). Costs are inputs; the source is still open (section 10) | Aditya |
@@ -252,6 +258,9 @@ Append here. Newest at the bottom. One line each.
   one the decision analysis uses and state it.
 - [ ] Which HINT numbers are the right comparison for our release (section 13)?
 - [ ] Ananya's Claude cannot work on the repo yet (section 13). Pick a route.
+- [ ] (Aditya) 106 trials are in train for one phase and valid for another (official split). Fine for per-phase models; for a pooled model, either accept the slightly optimistic validation score or drop those rows from `split_valid`. Your call
+- [ ] (Aditya) Disease block is a multi-hot, not a pre-trained embedding (see section 9). OK with that, or do you want a fixed dense one (e.g. SVD fit on train) as well?
+- [x] Fingerprints shipped 2026-11-10: `python -m features.build fingerprints`, see `features/README.md`. Disease block also ready; text pending a GPU run on Ananya's machine
 
 ---
 
@@ -283,11 +292,13 @@ where you left off.
 ## 13. Status and next up (update this every session)
 
 **Last updated:** 2026-11-10, by Aditya (with Claude).
-PRs #3, #4 and #5 were admin-merged into `main` by Aditya's instruction (no review from Ananya, who
-had not reviewed them). `main` now has the agreed contract, `split_valid`, the baselines, the
-research notes and `EASY_LANGUAGE.md`. Ananya's PR #6 (features pipeline) is open and conflicts with
-`main` in `HANDOFF.md` (both sides append to sections 9 and 10), so it needs `main` merged or rebased
-into `ananya/features-pipeline`. Keep both sides' rows when resolving. Her PR #6 still needs a review.
+PRs #3, #4, #5, #6 and #7 were admin-merged into `main` on Aditya's instruction, without a review from
+the other person. For #6 (Ananya's features pipeline), Aditya's Claude first merged `main` into
+`ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was not
+changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
+`main` now has the contract, `split_valid`, the baselines, the features pipeline (fingerprints and
+disease block ready, text block still a placeholder), `eval/decision.py`, the `pr_auc_hint` column and
+`EASY_LANGUAGE.md`. Her two questions for Aditya in section 10 are open.
 
 **Done:** repo public with `main` protected (1 approving review required); dataset and roles
 decided; section 5 contract agreed, now including `split_valid.npy`; evaluation harness merged
@@ -336,7 +347,9 @@ for p in I II III; do for s in train valid test; do
 done; done
 ```
 
-**Next up, Person A (Ananya), in `features/`:**
+**Next up, Person A (Ananya), in `features/`:** (2026-11-10: steps 1 to 4 are DONE in PR #6, merged.
+Fingerprints and the disease block are ready. What is left: the real PubMedBERT text run on a machine
+with a GPU, then ship `text_features.npy`. The list below is the original plan.)
 1. Validation set is decided: also write `split_valid.npy` (section 5).
 2. Script that reads the nine CSVs and writes `trial_ids`, `labels`, `phase`, `split_train`,
    `split_valid`, `split_test` to `data/processed/`. Row order must be identical across all arrays.
