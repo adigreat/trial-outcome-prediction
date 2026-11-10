@@ -2,3 +2,4 @@ numpy
 pandas
 scikit-learn
 xgboost
+torch          # fusion MLP and models.test_baselines; the CPU build is enough (see README "Running it")

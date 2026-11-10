@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-10 (fusion model built and run).
+Written for Ananya and Aditya. Last updated: 2026-11-11 (HINT numbers found, Windows fix, error analysis updated, README drafted).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -141,53 +141,74 @@ What the fusion model tells us:
   loses money or stops almost nothing. We use published average trial costs ($3.8M / $13.4M / $19.9M
   for Phase 1 / 2 / 3) and try several guesses for what a lost success is worth.
 
+**New on 2026-11-11 (Ananya)**
+- Aditya's fusion pull request (#10) was checked, approved and merged. Ananya re-ran part of it on a
+  normal processor and got nearly the same numbers (within about 0.02). Fusion results change slightly
+  from machine to machine, so we quote the average of 5 runs.
+- **The Windows crash is fixed.** The build now writes every text file as UTF-8. The `PYTHONUTF8=1`
+  trick is no longer needed.
+- **The odd P and Z disease codes are real, but they are noise.** TOP turns disease names into codes
+  automatically, and that drags in extra codes: a diabetes trial also gets "diabetes in a newborn" (P)
+  and "family history of diabetes" (Z). The error analysis now ignores P and Z unless a trial has
+  nothing else.
+- **Error analysis:** the letter D is now split into "tumours that are not cancer yet" (D00 to D49) and
+  "blood disorders" (D50 to D89). The first group behaves like cancer, because most of those trials
+  are cancer trials.
+- **The simple model (XGBoost) now has 5 runs** for drug, disease, and drug + disease. It hardly changes
+  between runs, so the fusion model's lead (about 0.01 to 0.03) is real, not luck.
+- **We found HINT's real numbers for our dataset** (the published paper, Table 2). On the fairest
+  score (ROC-AUC), our fusion model is level with HINT in Phases II and III and a bit above it in
+  Phase I. See section 8.
+- **Fresh-clone test** (Linux): a clean copy builds and passes every check. One thing was missing:
+  `torch` in `requirements.txt`. Now added.
+- **README drafted.** Gaps for Aditya are marked `TODO(Aditya)`.
+
 **Not done yet**
-- More seeds for the simple models, HINT's real numbers, the fresh-clone test, and the final README.
+- XGBoost runs with the text block (needs `text_features.npy` from Aditya).
+- The error analysis on the fusion model with the new D split (also needs the text file).
+- The fresh-clone test on Ananya's Windows laptop.
+- Aditya's parts of the README.
 
 ## 7. Next steps, why, and how
 
 ### Ananya
 Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
-1. **Fix the Windows crash in `features/`.**
-   *Why:* on Windows the build stops at the end with a `UnicodeEncodeError`.
-   *How:* open the validation report file with `encoding="utf-8"`.
-2. **Check one odd count.** Many trials carry an ICD chapter P (perinatal) or Z code. Is that really in
-   the data, or a parsing slip? (`HANDOFF.md` section 10.)
-3. **Error analysis is yours now.**
-   *Why:* it is built on the disease codes, which you know best.
-   *How:* in `models/error_analysis.py`, split ICD letter D into benign tumours (D00 to D49) and blood
-   disorders (D50 to D89), then rerun it on the fusion model with
-   `python -m models.error_analysis --model fusion --blocks drug,disease,text` (needs PyTorch).
-4. **Run the simple models (XGBoost) with more seeds.**
-   *Why:* the fusion model has 5 seeds and XGBoost has 1, so we cannot yet say how big the gap is.
-   *How:* `python -m models.baselines --blocks <combo> --seed <n>`, seeds 1 to 4, all seven block
-   combinations. You need the text array first: Aditya will send you `text_features.npy`.
-5. **Find HINT's real PR-AUC for our dataset version.**
-   *Why:* we cannot compare with HINT until we have the right number.
-   *How:* read the full text of the published HINT paper and note the table it comes from.
-6. **Fresh-clone test on your laptop.**
-   *Why:* the project must run for someone who starts from nothing, and your laptop is a different kind
-   of machine from Aditya's.
-   *How:* clone, install, build, run the four checks, and fix `requirements.txt` where it falls short.
-7. **Draft the final README.** Leave gaps for the fusion model's numbers.
+1. **Done 2026-11-11:** Windows fix, P/Z answer, D split, HINT numbers, README draft, fresh-clone test on
+   Linux, more XGBoost runs without text.
+2. **When Aditya sends `text_features.npy`:** put it in `data/processed/`, check that
+   `load_contract("data/processed")` passes, then
+   - run XGBoost with seeds 1 to 4 for the four combinations that use text, and
+   - rerun `python -m models.error_analysis --model fusion --blocks drug,disease,text`.
+   *Why:* these are the last numbers missing from the README.
+3. **Fresh-clone test on your laptop.**
+   *Why:* Windows on ARM is a different kind of machine, and nobody has tried a clean install there.
+   *How:* clone, make a venv, `pip install -r requirements.txt -r features/requirements.txt`, build,
+   run the checks. If a package will not install, try the x64 Python build. Write down what happened.
+4. **Finish the README** once Aditya has filled his parts.
 
 ### Aditya
-1. **Send `text_features.npy` to Ananya** (Drive or similar, never git). She needs it for her step 4.
+1. **Send `text_features.npy` to Ananya** (Drive or similar, never git). She still needs it.
 2. **Done: the fusion model**, with the ablation, error analysis and decision analysis on it.
-3. **Add the fusion numbers to the README** once Ananya has drafted it.
-4. **Review Ananya's pull requests.**
+3. **Fill the two `TODO(Aditya)` notes in the README draft.**
+4. **Answer one question:** should the noisy P/Z codes also be taken out of the disease *features*?
+   Ananya's default is to leave them in.
+5. **Review Ananya's pull request.**
 
 ## 8. About the HINT comparison (be careful here)
 
-HINT is the published model we are compared against. We probably will not beat it, and that
-is fine. A small gap with honest ablations is a better story than a big claim.
+HINT is the published model we are compared against. We did not expect to beat it, and we do not
+claim to.
 
-- The old numbers in `HANDOFF.md` (0.57 / 0.65 / 0.81) could not be traced to a source.
-- HINT's own code computes "PR-AUC" after turning predictions into 0/1 at 0.5, which is not the
-  usual way. We log both: `pr_auc` (usual) and `pr_auc_hint` (copies HINT).
-- The HINT arXiv paper gives PR-AUC of about 0.76 / 0.60 / 0.62 for Phase I / II / III, but on
-  a **different test set** than ours, so we cannot compare directly.
-- Do not quote any HINT number until we have matched it to our dataset version.
+- **The right numbers** come from the published HINT paper (*Patterns*, 2022, Table 2). Its test set is
+  the same as ours to within six trials per phase.
+- HINT's ROC-AUC is 0.576 / 0.645 / 0.723 for Phase I / II / III. Our fusion model gets 0.627 / 0.644 /
+  0.726. So: **level in Phases II and III, a bit above in Phase I**, where the test set is smallest and
+  the noise is biggest.
+- **Be careful with PR-AUC.** HINT's code turns predictions into 0/1 before computing it, which is not
+  the usual way. Compare HINT's PR-AUC (0.567 / 0.629 / 0.811) only with our `pr_auc_hint` (0.597 /
+  0.611 / 0.804), never with our usual `pr_auc`.
+- The old numbers in `HANDOFF.md` (0.57 / 0.65 / 0.81) were partly right and partly wrong. The arXiv
+  numbers (about 0.76 / 0.60 / 0.62) are on a different test set. Use neither.
 
 ## 9. Rules we both follow
 
