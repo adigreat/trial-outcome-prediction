@@ -266,6 +266,8 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-10 | Work redistributed (table in section 4). Ananya takes: error analysis (she now owns `models/error_analysis.py` and its test), the ablation table and multi-seed runs, the HINT number hunt, the fresh-clone test with `requirements.txt`, and the README draft. Aditya keeps: fusion model, decision analysis. This replaces "neither person owns both" in section 4 | Aditya |
 | 2026-11-10 | Ananya's laptop has no CUDA GPU (Snapdragon X, Windows on ARM, 16 GB RAM), so she does not run PubMedBERT. Aditya sends her `text_features.npy` directly (not through git). Her zips were compared with Aditya's local build: drug, disease, labels, phase, splits and trial IDs are identical, so the row order matches | Aditya |
 | 2026-11-10 | The redistribution PR (docs only) is admin-merged on Aditya's explicit instruction, so that Ananya sees her new list straight away | Aditya |
+| 2026-11-10 | Fusion model = `models/fusion.py`: one encoder per block (dropout 0.2, linear to 128, ReLU, dropout 0.5), concatenated, then a 128-unit head. AdamW, lr 1e-3, weight decay 1e-2, batch 128, at most 60 epochs. One model per phase. The official valid split picks the stopping epoch (ROC-AUC, patience 8), so valid scores for this model are optimistic; test is never used in training. Settings were fixed before the first test run and are not tuned. 0/1 blocks are fed as they are, the text block is standardised on train | Aditya |
+| 2026-11-10 | The fusion model runs through the existing commands (`models.baselines --models fusion`, `models.error_analysis --model fusion`, `models.decision_run --model fusion`). For that, Aditya changed three lines in `models/error_analysis.py` (Ananya's file) to call the shared `fit` helper in `models/baselines.py` | Aditya |
 
 ---
 
@@ -315,7 +317,8 @@ where you left off.
 **Last updated:** 2026-11-10, by Aditya.
 PRs #3 to #8 are merged into `main`. #3 to #7 were admin-merged on Aditya's instruction, without a
 review from the other person. #8 was approved by Ananya and merged normally. **The work was
-redistributed on 2026-11-10: see the table in section 4 and the two "Next up" lists below.** For #6 (Ananya's features pipeline), Aditya first merged `main`
+redistributed on 2026-11-10: see the table in section 4 and the two "Next up" lists below.**
+The fusion model is built and run (branch `aditya/fusion-mlp`, see the PR list). For #6 (Ananya's features pipeline), Aditya first merged `main`
 into `ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was
 not changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
 
@@ -345,6 +348,48 @@ What this says, and does not say:
   0.71) is the fairer read.
 - Nothing here is comparable to HINT's published numbers (see "Not verified").
 
+**Fusion MLP (2026-11-10, `models/fusion.py`, settings in section 9).** Test split, PR-AUC, mean and
+standard deviation over 5 training seeds (0 to 4), mean ROC-AUC in brackets. The spread is over seeds
+only; it says nothing about how much the test sample itself would vary. All 210 rows (valid and test)
+are in `results/results.csv` with `"model": "fusion"`.
+
+| blocks (fusion MLP) | Phase I (n=627) | Phase II (n=1654) | Phase III (n=1146) |
+|---|---|---|---|
+| positive rate (PR-AUC floor) | 0.553 | 0.555 | 0.750 |
+| best XGBoost row above (disease, 1 seed) | 0.652 (0.593) | 0.682 (0.631) | 0.858 (0.706) |
+| drug | 0.628 ± 0.007 (0.565) | 0.612 ± 0.003 (0.563) | 0.835 ± 0.004 (0.630) |
+| disease | 0.635 ± 0.010 (0.571) | 0.683 ± 0.002 (0.633) | 0.861 ± 0.001 (0.704) |
+| text | 0.682 ± 0.007 (0.636) | 0.682 ± 0.003 (0.640) | 0.862 ± 0.003 (0.691) |
+| drug+disease | 0.633 ± 0.003 (0.580) | 0.677 ± 0.006 (0.618) | 0.867 ± 0.004 (0.700) |
+| drug+text | 0.682 ± 0.010 (0.636) | 0.688 ± 0.007 (0.640) | 0.872 ± 0.005 (0.696) |
+| disease+text | 0.674 ± 0.009 (0.631) | 0.696 ± 0.005 (0.653) | 0.874 ± 0.003 (0.719) |
+| drug+disease+text | 0.675 ± 0.012 (0.627) | 0.693 ± 0.005 (0.644) | 0.882 ± 0.002 (0.726) |
+
+What the ablation says:
+- With the fusion model, combining blocks helps, which it did not with XGBoost. All three blocks beat
+  the best XGBoost row in every phase (by about 0.02, 0.01 and 0.02 PR-AUC).
+- Phase I: the eligibility text carries the signal. Text alone (0.682) is as good as all three (0.675);
+  adding disease or drug changes nothing beyond seed noise.
+- Phase II: disease and text together (0.696) do the work. Adding the drug block does not help (0.693).
+- Phase III: every block adds a little and all three is best (0.882; ROC-AUC 0.726).
+- The drug fingerprint is the weakest block alone in every phase.
+- The gains over XGBoost are small, and XGBoost has one seed. Ananya's multi-seed XGBoost runs are
+  needed before saying how big the gap is.
+- `pr_auc_hint` for all three blocks on test is 0.597 / 0.611 / 0.804 (mean of 5 seeds). Still not
+  compared with HINT (see "Not verified").
+
+**Fusion model, error analysis (seed 0, all three blocks):** cancer is still the hard area. ROC-AUC
+within cancer is 0.55 / 0.59 / 0.57 against 0.63 / 0.65 / 0.73 overall, and in Phase III the model
+still under-predicts cancer successes (mean prediction 0.45, actual 0.60). Circulatory is 0.69 / 0.61 /
+0.73 on 30 / 105 / 80 trials.
+
+**Fusion model, decision analysis (seed 0, all three blocks):** the reading does not change. At a 1x
+loss the model comes out ahead in Phase I (+$137M, 154 trials stopped, 59 of them wrongly) and
+Phase II (+$1,055M, 839 stopped, 380 wrongly), and loses in Phase III (-$438M). At 3x it loses in
+every phase. At 10x it stops almost nothing. Not good enough to stop trials on.
+
+The paragraphs below describe the XGBoost runs.
+
 **Error analysis by disease area** (`python -m models.error_analysis`, rows in
 `results/error_analysis.csv`): cancer is the hard area. It has the lowest success rate (0.44 / 0.46 /
 0.60 against 0.55 / 0.56 / 0.75 overall) and within cancer the models are near chance in Phase I
@@ -362,13 +407,21 @@ decided; section 5 contract agreed, including `split_valid.npy`; evaluation harn
 (`python -m eval.test_harness`); `pr_auc_hint` column; decision-analysis code (`eval/decision.py`);
 baselines (logreg, xgboost) run on the real arrays for all seven block combinations; features
 pipeline from Ananya, with all three blocks built on Aditya's machine (text = PubMedBERT, 1536 dims);
-error analysis by disease area; decision analysis on real predictions; leakage columns identified;
+error analysis by disease area; decision analysis on real predictions; fusion MLP with a 5-seed
+ablation, error analysis and decision analysis; leakage columns identified;
 Phase I decision made (report all three).
 
 **Where we stopped (2026-11-10, Aditya's session):**
 - `main` is up to date and there are no open PRs except whatever is listed by `gh pr list`.
-- Still to do: fusion MLP (the main model), tuning and more seeds, then the final README. The
-  XGBoost ablation, error analysis and decision analysis exist but should be redone on the fusion model.
+- Still to do: multi-seed XGBoost runs, the ICD letter D split, HINT's numbers, the fresh-clone test and
+  the final README (all on Ananya's list), then putting the fusion numbers into the README.
+- The fusion settings are untuned. Tuning on valid is possible but valid already picks the stopping
+  epoch, so a tuned model would need its valid scores read with even more care. Not planned.
+- The fusion run was interrupted once (the machine ran low on memory) and finished on a second go.
+  Two rows of the cut-off run were removed from the uncommitted `results/results.csv` before rerunning
+  that seed, so there are no duplicate or missing rows: 84 earlier rows + 35 runs x 6.
+- A fusion run takes about 25 seconds per block combination and seed on the RTX 3050, most of it
+  loading. Training on a GPU is not bit-for-bit repeatable, so expect differences in the third decimal.
 - The text block took about 25 minutes on an RTX 3050 6 GB (197,232 criterion bullets). 3 rows have an
   all-zero text vector (no usable criteria).
 - Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
@@ -430,13 +483,14 @@ needs a GPU.
 2. Answer the ICD chapter P / Z question in section 10.
 3. Error analysis is yours now (`models/error_analysis.py`, `models/test_error_analysis.py`):
    a. split ICD letter D into benign neoplasms (D00 to D49) and blood disorders (D50 to D89);
-   b. rerun `python -m models.error_analysis` and update the paragraph in this section;
-   c. rerun it on the fusion model when Aditya has merged it, and write the result up for the README.
-4. Ablation table with several seeds: `python -m models.baselines --blocks <combo> --seed <n>` for the
-   seven block combinations and seeds 1 to 4 (seed 0 is logged). Report mean and spread per phase. Needs
-   `text_features.npy` from Aditya (put it in `data/processed/`, then check that
-   `load_contract("data/processed")` passes and `manifest.json` still describes the blocks). Do the same
-   with the fusion CLI once it exists.
+   b. rerun `python -m models.error_analysis --model fusion --blocks drug,disease,text` (Aditya ran
+      seed 0 before the D split; needs PyTorch) and update the paragraphs in this section;
+   c. write the result up for the README.
+4. XGBoost with several seeds: `python -m models.baselines --blocks <combo> --seed <n>` for the seven
+   block combinations and seeds 1 to 4 (seed 0 is logged). Report mean and spread per phase beside the
+   fusion table. The fusion model already has seeds 0 to 4. Needs `text_features.npy` from Aditya (put
+   it in `data/processed/`, then check that `load_contract("data/processed")` passes and
+   `manifest.json` still describes the blocks).
 5. Find HINT's PR-AUC for our release: the full text of the published HINT paper (PubMed 35465223),
    test sets of 627 / 1,653 / 1,140 trials. Record the numbers with the table or page they come from in
    section 8, and close the open question in section 10. Also confirm the metric definition in
@@ -450,12 +504,9 @@ needs a GPU.
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
 1. Send `text_features.npy` to Ananya directly (Drive or similar, never git). She is blocked on it for
    item 4 of her list.
-2. Fusion MLP: concatenate the three blocks, small MLP head, tune on valid. Give it the same CLI shape
-   as `models.baselines` (`--blocks`, `--seed`) and log through `eval.harness.evaluate`, so Ananya can
-   run the ablation and the error analysis on it. PyTorch is installed in the venv (cu124).
-3. Rerun the decision analysis on the fusion model.
-4. Add the fusion numbers to Ananya's README draft.
-5. Review Ananya's PRs.
+2. DONE: fusion MLP, 5-seed ablation, error analysis and decision analysis on it (above).
+3. Add the fusion numbers to Ananya's README draft.
+4. Review Ananya's PRs.
 
 **Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
 the other person approves. Never push to `main`.

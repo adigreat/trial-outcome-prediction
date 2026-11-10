@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-10 (all three feature blocks built, first ablation done, work re-split).
+Written for Ananya and Aditya. Last updated: 2026-11-10 (fusion model built and run).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -80,6 +80,7 @@ Check before sending: `eval.harness.load_contract("data/processed")` must pass.
   eligibility text. Aditya ran the text step on his laptop GPU (about 25 minutes).
 - First real baselines for every combination of the three blocks.
 - A first error analysis by disease area and a first decision analysis.
+- **The fusion model (the main model) is built and run**, with 5 seeds for every combination of blocks.
 - Pull requests #3 to #8 are merged. Ananya reviewed and approved #8. #3 to #7 were merged by Aditya
   as admin before she could review them.
 - Ananya's two zips were checked against Aditya's own build: the arrays are identical.
@@ -107,6 +108,29 @@ What it means in plain words:
 - These are untuned, one-seed numbers. A point or two is noise.
 - They cannot be compared with HINT's paper yet.
 
+**The fusion model (test set, PR-AUC, average of 5 runs)**
+
+| What the model sees | Phase I | Phase II | Phase III |
+|---|---|---|---|
+| Nothing (always guess "success") | 0.55 | 0.56 | 0.75 |
+| Best simple model above (disease only) | 0.65 | 0.68 | 0.86 |
+| Drug only | 0.63 | 0.61 | 0.84 |
+| Disease only | 0.64 | 0.68 | 0.86 |
+| Text only | 0.68 | 0.68 | 0.86 |
+| Drug + disease | 0.63 | 0.68 | 0.87 |
+| Drug + text | 0.68 | 0.69 | 0.87 |
+| Disease + text | 0.67 | 0.70 | 0.87 |
+| All three | 0.68 | 0.69 | 0.88 |
+
+What the fusion model tells us:
+- **Combining the blocks now helps.** All three together beat the best simple model in every phase,
+  by one or two points. That is a small gain, not a big one.
+- **Phase I: the eligibility text does the work.** Text alone is as good as everything together.
+- **Phase II: disease plus text is enough.** The drug block adds nothing.
+- **Phase III: every block adds a little,** and all three together is best.
+- The five runs agree with each other to about 0.01, so these patterns are not luck of the seed.
+- Cancer is still the hard area, and the model is still not good enough to stop trials on.
+
 **Where the model struggles (error analysis)**
 - **Cancer trials are the hard ones.** They fail more often than other areas, and inside cancer the
   model is close to guessing in Phase I.
@@ -118,7 +142,7 @@ What it means in plain words:
   for Phase 1 / 2 / 3) and try several guesses for what a lost success is worth.
 
 **Not done yet**
-- The fusion model (the main model), tuning, more seeds, and the final README.
+- More seeds for the simple models, HINT's real numbers, the fresh-clone test, and the final README.
 
 ## 7. Next steps, why, and how
 
@@ -132,9 +156,10 @@ Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
 3. **Error analysis is yours now.**
    *Why:* it is built on the disease codes, which you know best.
    *How:* in `models/error_analysis.py`, split ICD letter D into benign tumours (D00 to D49) and blood
-   disorders (D50 to D89), rerun it, and later rerun it on the fusion model.
-4. **Run the ablation with more seeds.**
-   *Why:* one seed is not enough to trust a difference of a point or two.
+   disorders (D50 to D89), then rerun it on the fusion model with
+   `python -m models.error_analysis --model fusion --blocks drug,disease,text` (needs PyTorch).
+4. **Run the simple models (XGBoost) with more seeds.**
+   *Why:* the fusion model has 5 seeds and XGBoost has 1, so we cannot yet say how big the gap is.
    *How:* `python -m models.baselines --blocks <combo> --seed <n>`, seeds 1 to 4, all seven block
    combinations. You need the text array first: Aditya will send you `text_features.npy`.
 5. **Find HINT's real PR-AUC for our dataset version.**
@@ -148,12 +173,9 @@ Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
 
 ### Aditya
 1. **Send `text_features.npy` to Ananya** (Drive or similar, never git). She needs it for her step 4.
-2. **Fusion model:** join the three blocks and train a small neural network (MLP).
-   *Why:* simple stacking did not beat the disease block alone, so we need a model that can combine them.
-   *How:* PyTorch is already installed in the project venv. Give it the same command-line options as
-   the baselines so Ananya can run it too.
-3. **Redo the decision analysis on the fusion model.**
-4. **Add the fusion numbers to the README** and review Ananya's pull requests.
+2. **Done: the fusion model**, with the ablation, error analysis and decision analysis on it.
+3. **Add the fusion numbers to the README** once Ananya has drafted it.
+4. **Review Ananya's pull requests.**
 
 ## 8. About the HINT comparison (be careful here)
 
