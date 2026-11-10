@@ -233,6 +233,9 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-09 | Contract gains `split_valid.npy` (official valid rows). `load_contract` now requires it and checks the three splits do not overlap. Ananya must produce it | Aditya (Ananya to confirm) |
 | 2026-11-09 | Report all three phases, Phase I included. Phase I is the smallest (627 test trials), so show `n` beside every number and say it is noisy. Dropping it would look like cherry-picking and HINT reports it | Aditya |
 | 2026-11-09 | Baselines in `models/baselines.py` (logreg, xgboost). One model per phase, fit on train, logged on valid and test. Project venv `.venv/` from `requirements.txt` | Aditya |
+| 2026-11-10 | PRs #3, #4, #5 merged with `gh pr merge --admin` on Aditya's explicit instruction, because Ananya had not reviewed them | Aditya |
+| 2026-11-10 | Results CSV gains `pr_auc_hint`: average precision on predictions cut to 0/1 at 0.5, which is how HINT's code computes its "PR-AUC". `pr_auc` stays the standard threshold-free metric. Use `pr_auc_hint` only to compare with HINT's paper, and label it | Aditya |
+| 2026-11-10 | `eval/decision.py`: threshold table (true kills, wrong kills, net value). Costs are inputs; the source is still open (section 10) | Aditya |
 
 ---
 
@@ -279,8 +282,12 @@ where you left off.
 
 ## 13. Status and next up (update this every session)
 
-**Last updated:** 2026-11-10, by Aditya. Research notes only: no code changed.
-Still no activity from Ananya (checked `gh pr list`, branches, reviews on 2026-11-10).
+**Last updated:** 2026-11-10, by Aditya.
+PRs #3, #4 and #5 were admin-merged into `main` by Aditya's instruction (no review from Ananya, who
+had not reviewed them). `main` now has the agreed contract, `split_valid`, the baselines, the
+research notes and `EASY_LANGUAGE.md`. Ananya's PR #6 (features pipeline) is open and conflicts with
+`main` in `HANDOFF.md` (both sides append to sections 9 and 10), so it needs `main` merged or rebased
+into `ananya/features-pipeline`. Keep both sides' rows when resolving. Her PR #6 still needs a review.
 
 **Done:** repo public with `main` protected (1 approving review required); dataset and roles
 decided; section 5 contract agreed, now including `split_valid.npy`; evaluation harness merged
@@ -288,11 +295,8 @@ with a self-check (`python -m eval.test_harness`); baselines written and tested 
 raw TOP CSVs counted; leakage columns identified; Phase I decision made (report all three).
 
 **Where we stopped (2026-11-09, end of Aditya's session):**
-- PR #3 (section 5 agreed, status section) and PR #4 (baselines, `split_valid`, `requirements.txt`)
-  are OPEN with no reviews. Ananya is the only other collaborator, so she has to approve them.
-  Merge #3 first. #4 is stacked on #3's branch (`aditya/section5-agreed`), so its diff shrinks
-  once #3 is in. Until both merge, `main` does not have the contract status, `split_valid`,
-  or the baselines.
+- UPDATE 2026-11-10: PRs #3, #4 and #5 are merged (see the top of this section). The text below
+  this line about them being open is out of date.
 - Aditya's local checkout was on branch `aditya/baselines`. After #3 merges: `git checkout main`,
   `git pull`, and if #4 shows conflicts, rebase `aditya/baselines` onto `main`.
 - Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
