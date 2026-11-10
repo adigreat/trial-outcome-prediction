@@ -202,8 +202,11 @@ correctly kill, and how many successful ones would we wrongly kill? Put a cost o
 ## 8. Expectations
 
 **We will probably not beat HINT.** It is a purpose-built research model with a
-hierarchical architecture. Published numbers are roughly PR-AUC 0.57 / 0.65 / 0.81 for
-Phase I / II / III — check these against whichever dataset version we pick before quoting them.
+hierarchical architecture. **Do not quote 0.57 / 0.65 / 0.81 — we could not source them
+(2026-11-10).** What we did find, from the HINT arXiv paper (2102.04252 v3, Table 3, PR-AUC
+Phase I / II / III): 0.764 / 0.602 / 0.618, on a different test set (312 / 789 / 1,141 trials,
+registration-date cutoffs in 2014, 15% of train held out for validation). That is not our
+release (627 / 1,654 / 1,146), so it is not a like-for-like comparison. See section 13.
 
 Getting within a few points using simpler components, with ablations that explain *why*,
 is a better story than a vague state-of-the-art claim nobody believes. Do not inflate
@@ -238,7 +241,14 @@ Append here. Newest at the bottom. One line each.
 - [x] Which dataset version (section 3): Fu et al. original, decided 2026-11-09
 - [x] Validation set: `split_valid.npy` added to the contract and the harness (2026-11-09).
 - [x] Phase I: report all three phases, flag Phase I as noisy (section 9, 2026-11-09).
-- [ ] Cost assumptions for the decision analysis — where do we source trial cost figures?
+- [ ] Cost assumptions for the decision analysis. Candidate sources found 2026-11-10 (from
+  search summaries, open the primary source before quoting): Sertkaya et al., Clin Trials 2016
+  (per-study cost by phase and therapeutic area: Phase 1 about $1.4M to $6.6M, Phase 2 about
+  $7.0M to $19.6M, Phase 3 about $11.5M to $52.9M); CBO per-drug figures (about $28M / $65M /
+  $282M for Phase 1 / 2 / 3, per drug completing all phases, so not per trial). Decide which
+  one the decision analysis uses and state it.
+- [ ] Which HINT numbers are the right comparison for our release (section 13)?
+- [ ] Ananya's Claude cannot work on the repo yet (section 13). Pick a route.
 
 ---
 
@@ -269,7 +279,8 @@ where you left off.
 
 ## 13. Status and next up (update this every session)
 
-**Last updated:** 2026-11-09, by Aditya (with Claude).
+**Last updated:** 2026-11-10, by Aditya (with Claude). Research notes only: no code changed.
+Still no activity from Ananya (checked `gh pr list`, branches, reviews on 2026-11-10).
 
 **Done:** repo public with `main` protected (1 approving review required); dataset and roles
 decided; section 5 contract agreed, now including `split_valid.npy`; evaluation harness merged
@@ -292,10 +303,25 @@ raw TOP CSVs counted; leakage columns identified; Phase I decision made (report 
 - `results/results.csv` does not exist yet. No real numbers have been produced.
 
 **Not verified, do not quote yet:**
-- HINT's published PR-AUC (0.57 / 0.65 / 0.81) and the metric definition HINT uses. sklearn's
-  `average_precision_score` is the step-wise version and may differ slightly.
+- HINT's published PR-AUC for OUR release. 0.57 / 0.65 / 0.81 has no source. The arXiv v3
+  paper (Table 3) gives 0.764 / 0.602 / 0.618, but its test sets (312 / 789 / 1,141) differ from
+  ours. The abstract says 0.772 / 0.607 / 0.623, so the abstract and Table 3 disagree. The PubMed
+  record for the published HINT paper (35465223) reports F1 0.665 / 0.620 / 0.847 on 627 / 1,653 /
+  1,140 trials, which matches our CSV sizes, so that is probably the right version to compare
+  against. We could not retrieve its PR-AUC, so find it in the full text first.
+- The metric definition HINT uses: the paper only says "PR-AUC" with bootstrap error bars, no
+  formula. Not yet checked in the HINT code. sklearn's `average_precision_score` is the
+  step-wise version and may differ slightly.
 - XGBoost settings (200 trees, depth 4) are untuned defaults, so the baselines are a first floor.
-- Trial cost figures for the decision analysis (section 10) have no source yet.
+- Trial cost figures for the decision analysis: candidate sources are in section 10, none
+  verified against the primary paper.
+
+**Ananya's Claude cannot work yet (2026-11-10):** Ananya sees "The Claude GitHub App on adigreat
+isn't connected. Only adigreat can connect it." The app IS installed on `adigreat` (all repos)
+and connected on Aditya's Claude account. This only affects cloud/web Claude sessions. It does
+not block her working locally: clone the repo, use her own `gh` login, run Claude Code in the
+terminal. If she needs cloud sessions, the options are a fork under her own account (install the
+app there, PR back to `adigreat`) or moving the repo to a GitHub org both of us belong to.
 
 **Getting the raw data** (gitignored, ~40 MB, run from the repo root):
 
