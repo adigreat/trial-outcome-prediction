@@ -243,6 +243,12 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-10 | Results CSV gains `pr_auc_hint`: average precision on predictions cut to 0/1 at 0.5, which is how HINT's code computes its "PR-AUC". `pr_auc` stays the standard threshold-free metric. Use `pr_auc_hint` only to compare with HINT's paper, and label it | Aditya |
 | 2026-11-10 | `eval/decision.py`: threshold table (true kills, wrong kills, net value). Costs are inputs; the source is still open (section 10) | Aditya |
 | 2026-11-10 | Model: first real floor run (drug, disease, drug+disease; table in section 13). Docs rule added to `CLAUDE.md`: HANDOFF.md, EASY_LANGUAGE.md and README.md are updated together whenever the state changes | Aditya |
+| 2026-11-10 | Answer to Ananya: keep the 106 trials that are in train for one phase and valid for another. We train one model per phase, so there is no leak | Aditya |
+| 2026-11-10 | Answer to Ananya: the multi-hot disease block is fine as is. No dense version for now (it is already the strongest block) | Aditya |
+| 2026-11-10 | The PubMedBERT text step is run on Aditya's machine (RTX 3050 6 GB), because Ananya's workspace has no GPU. Same code, `python -m features.build text` | Aditya |
+| 2026-11-10 | Decision-analysis costs: money saved per correctly stopped trial = average per-study cost from the ERG report for HHS ASPE (Sertkaya et al., 2014): $3.80M / $13.35M / $19.89M for Phase 1 / 2 / 3 (US, Medidata contract data from 2004 on, not inflation-adjusted). Value lost per wrongly stopped success has no trusted source, so it is an assumption: 1x, 3x and 10x the trial cost, all reported. Kill threshold is chosen on valid and reported on test (`models/decision_run.py`) | Aditya |
+| 2026-11-10 | Error analysis by disease area = ICD-10 chapter letter from the disease block (`models/error_analysis.py`). Letter D mixes benign neoplasms and blood disorders | Aditya |
+| 2026-11-10 | Text block built on Aditya's machine (PubMedBERT, 1536 dims). All three blocks are ready, so the XGBoost ablation over all seven block combinations is logged in `results/results.csv` | Aditya |
 
 ---
 
@@ -251,16 +257,13 @@ Append here. Newest at the bottom. One line each.
 - [x] Which dataset version (section 3): Fu et al. original, decided 2026-11-09
 - [x] Validation set: `split_valid.npy` added to the contract and the harness (2026-11-09).
 - [x] Phase I: report all three phases, flag Phase I as noisy (section 9, 2026-11-09).
-- [ ] Cost assumptions for the decision analysis. Candidate sources found 2026-11-10 (from
-  search summaries, open the primary source before quoting): Sertkaya et al., Clin Trials 2016
-  (per-study cost by phase and therapeutic area: Phase 1 about $1.4M to $6.6M, Phase 2 about
-  $7.0M to $19.6M, Phase 3 about $11.5M to $52.9M); CBO per-drug figures (about $28M / $65M /
-  $282M for Phase 1 / 2 / 3, per drug completing all phases, so not per trial). Decide which
-  one the decision analysis uses and state it.
+- [x] Cost assumptions for the decision analysis: decided 2026-11-10, see section 9 (ASPE/ERG 2014
+  per-study costs; the value of a lost success is a stated 1x / 3x / 10x assumption).
 - [ ] Which HINT numbers are the right comparison for our release (section 13)?
-- [ ] Ananya's Claude cannot work on the repo yet (section 13). Pick a route.
-- [ ] (Aditya) 106 trials are in train for one phase and valid for another (official split). Fine for per-phase models; for a pooled model, either accept the slightly optimistic validation score or drop those rows from `split_valid`. Your call
-- [ ] (Aditya) Disease block is a multi-hot, not a pre-trained embedding (see section 9). OK with that, or do you want a fixed dense one (e.g. SVD fit on train) as well?
+- [x] Ananya's Claude: she works from her own environment and opened PR #6, so this is not blocking.
+- [x] (Aditya) 106 trials in train for one phase and valid for another: keep them (section 9, 2026-11-10).
+- [x] (Aditya) Disease block as a multi-hot: fine as is (section 9, 2026-11-10).
+- [ ] (Ananya) 115 Phase III test trials carry an ICD chapter P (perinatal) code and 194 a chapter Z code, which looks high. Is that real in TOP's `icdcodes`, or a parsing artifact? Seen in `results/error_analysis.csv`
 - [x] Fingerprints shipped 2026-11-10: `python -m features.build fingerprints`, see `features/README.md`. Disease block also ready; text pending a GPU run on Ananya's machine
 
 ---
@@ -298,45 +301,62 @@ review from the other person. For #6 (Ananya's features pipeline), Aditya's Clau
 into `ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was
 not changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
 
-**First real numbers (2026-11-10, Aditya's machine, seed 0, untuned defaults).** Built locally with
-`python -m features.build fetch / fingerprints / disease`, then `python -m models.baselines --blocks ...`.
-Test split, PR-AUC (the standard, threshold-free one) with ROC-AUC in brackets. The "always predict
-success" floor for PR-AUC is the positive rate, shown on the first row. Full rows, with `pr_auc_hint`
-and the valid split, are in `results/results.csv`.
+**Real numbers so far (2026-11-10, Aditya's machine, seed 0, untuned defaults).** Arrays built locally
+with `python -m features.build fetch / fingerprints / disease / text`, then
+`python -m models.baselines --blocks ...`. Test split, XGBoost, PR-AUC (the standard, threshold-free
+one) with ROC-AUC in brackets. The "always predict success" floor for PR-AUC is the positive rate.
+Logistic regression rows, `pr_auc_hint` and the valid split are in `results/results.csv` (84 rows).
 
-| model / blocks | Phase I (n=627) | Phase II (n=1654) | Phase III (n=1146) |
+| blocks (xgboost) | Phase I (n=627) | Phase II (n=1654) | Phase III (n=1146) |
 |---|---|---|---|
 | positive rate (PR-AUC floor) | 0.553 | 0.555 | 0.750 |
-| logreg, drug | 0.583 (0.531) | 0.580 (0.534) | 0.777 (0.540) |
-| xgboost, drug | 0.609 (0.556) | 0.607 (0.557) | 0.829 (0.628) |
-| logreg, disease | 0.599 (0.552) | 0.637 (0.601) | 0.839 (0.681) |
-| xgboost, disease | 0.652 (0.593) | 0.682 (0.631) | 0.858 (0.706) |
-| logreg, drug+disease | 0.605 (0.551) | 0.599 (0.562) | 0.791 (0.579) |
-| xgboost, drug+disease | 0.626 (0.588) | 0.660 (0.603) | 0.852 (0.665) |
+| drug | 0.609 (0.556) | 0.607 (0.557) | 0.829 (0.628) |
+| disease | 0.652 (0.593) | 0.682 (0.631) | 0.858 (0.706) |
+| text | 0.628 (0.586) | 0.667 (0.617) | 0.851 (0.678) |
+| drug+disease | 0.626 (0.588) | 0.660 (0.603) | 0.852 (0.665) |
+| drug+text | 0.630 (0.594) | 0.685 (0.635) | 0.849 (0.670) |
+| disease+text | 0.645 (0.594) | 0.683 (0.629) | 0.836 (0.666) |
+| drug+disease+text | 0.655 (0.616) | 0.668 (0.626) | 0.844 (0.666) |
 
-What this says, and does not say: the disease block carries more signal than the drug block in
-every phase, and adding drug to disease did not help (it hurt), probably because 2048 sparse bits
-overfit on this few trials. Phase III PR-AUC looks high only because 75% of its test trials are
-successes; its ROC-AUC (0.71) is the fairer read. These are single-seed, untuned numbers, so treat
-differences of a point or two as noise. Phase I has the smallest test set. The text block is not built
-yet, so there is no text number and no three-way ablation yet. Nothing here is comparable to HINT's
-published numbers (see "Not verified").
+What this says, and does not say:
+- Disease and text each carry real signal and are close to each other. Drug fingerprints are the
+  weakest block in every phase.
+- Stacking blocks does not help a plain XGBoost: no combination clearly beats disease alone, and in
+  Phase III every combination is below it. Differences of a point or two are noise (one seed, untuned).
+- Phase III PR-AUC looks high only because 75% of its test trials succeed. Its ROC-AUC (about 0.67 to
+  0.71) is the fairer read.
+- Nothing here is comparable to HINT's published numbers (see "Not verified").
+
+**Error analysis by disease area** (`python -m models.error_analysis`, rows in
+`results/error_analysis.csv`): cancer is the hard area. It has the lowest success rate (0.44 / 0.46 /
+0.60 against 0.55 / 0.56 / 0.75 overall) and within cancer the models are near chance in Phase I
+(ROC-AUC 0.51 disease-only, 0.54 with all blocks). In Phase III the disease-only model under-predicts
+cancer successes (mean prediction 0.41, actual 0.60). Circulatory was near chance with disease only
+(0.53 / 0.51 in Phase II / III) and better with all three blocks (0.58 / 0.69), on about 100 trials.
+
+**Decision analysis** (`python -m models.decision_run`, rows in `results/decision_analysis.csv`, costs in
+section 9): with the kill threshold picked on valid, these models only come out ahead on test when
+a wrong kill costs no more than the trial itself, and not in Phase III. At 3x and 10x they lose money
+or stop almost nothing. Honest reading: the current models are not good enough to stop trials on.
 
 **Done:** repo public with `main` protected (1 approving review required); dataset and roles
 decided; section 5 contract agreed, including `split_valid.npy`; evaluation harness with a self-check
 (`python -m eval.test_harness`); `pr_auc_hint` column; decision-analysis code (`eval/decision.py`);
-baselines (logreg, xgboost) written and run on the real arrays for drug, disease and drug+disease;
-features pipeline from Ananya (fingerprints and disease block ready); leakage columns identified;
+baselines (logreg, xgboost) run on the real arrays for all seven block combinations; features
+pipeline from Ananya, with all three blocks built on Aditya's machine (text = PubMedBERT, 1536 dims);
+error analysis by disease area; decision analysis on real predictions; leakage columns identified;
 Phase I decision made (report all three).
 
 **Where we stopped (2026-11-10, Aditya's session):**
 - `main` is up to date and there are no open PRs except whatever is listed by `gh pr list`.
-- Still to do on the modelling side: text block (blocked on Ananya's GPU run), fusion MLP, ablation
-  over all three blocks, error analysis by disease area, decision analysis on real predictions.
+- Still to do: fusion MLP (the main model), tuning and more seeds, then the final README. The
+  XGBoost ablation, error analysis and decision analysis exist but should be redone on the fusion model.
+- The text block took about 25 minutes on an RTX 3050 6 GB (197,232 criterion bullets). 3 rows have an
+  all-zero text vector (no usable criteria).
 - Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
   that session. Aditya said so for PRs #3 to #7.
-- Ananya has not answered the two questions addressed to her in section 10, and has not yet reviewed
-  anything Aditya's Claude merged.
+- Ananya has not yet reviewed anything Aditya's Claude merged. One question is open for her in section 10
+  (ICD chapter P / Z counts).
 - Windows bug found while building (2026-11-10): `python -m features.build fingerprints` crashes at the
   end with `UnicodeEncodeError ... '⚠'` because the validation report is written without
   `encoding="utf-8"`. Workaround that needs no code change: set `PYTHONUTF8=1` before running. The
@@ -373,27 +393,24 @@ pip install -r requirements.txt -r features/requirements.txt
 python -m features.build fetch          # clones TOP at the pinned commit into data/raw/top/
 python -m features.build fingerprints
 python -m features.build disease
+pip install torch --index-url https://download.pytorch.org/whl/cu124   # pick the build for your CUDA
+pip install -r features/requirements-text.txt
+python -m features.build text           # PubMedBERT, about 25 min on a 6 GB GPU, resumable
 ```
 
-**Next up, Person A (Ananya), in `features/`:** (2026-11-10: steps 1 to 4 are DONE in PR #6, merged.
-Fingerprints and the disease block are ready. What is left: the real PubMedBERT text run on a machine
-with a GPU, then ship `text_features.npy`. The list below is the original plan.)
-1. Validation set is decided: also write `split_valid.npy` (section 5).
-2. Script that reads the nine CSVs and writes `trial_ids`, `labels`, `phase`, `split_train`,
-   `split_valid`, `split_test` to `data/processed/`. Row order must be identical across all arrays.
-3. Morgan fingerprints into `drug_features.npy` **first**, so B is unblocked. Some trials list
-   several drugs in `smiless`: decide how to combine them and write it in section 9.
-4. Run `eval.harness.load_contract("data/processed")`; if it passes, tell B.
-5. Then ICD embeddings, then PubMedBERT text embeddings (2 rows have empty `criteria`).
+**Next up, Person A (Ananya), in `features/`:** all three blocks are built and the pipeline is merged.
+1. Fix the Windows `UnicodeEncodeError` (write the validation report with `encoding="utf-8"`).
+2. Answer the ICD chapter P / Z question in section 10.
+3. Look over what was merged without your review (PRs #3 to #7) and what Aditya decided in section 9.
+4. Then pick up a shared workstream from section 6 (error analysis or decision analysis write-up).
 
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
-1. DONE: `models/baselines.py` and the first real floor (table above).
-2. Fusion MLP (concatenate the ready blocks, small MLP head) once the text block exists. Needs a
-   PyTorch install, which is not in `requirements.txt` yet.
-3. Ablation: `--blocks` already covers drug, disease and drug+disease. Add text when it ships.
-4. Error analysis by disease area, then the decision analysis on real predictions with
-   `eval.decision.threshold_table` (costs are an open question, section 10).
-5. Answer Ananya's two questions in section 10.
+1. DONE: baselines, seven-way block ablation with XGBoost, error analysis, decision analysis (above).
+2. Fusion MLP: concatenate the three blocks, small MLP head, tune on valid. PyTorch is installed in
+   the venv (cu124) but is not in the root `requirements.txt` yet.
+3. Rerun the ablation, error analysis and decision analysis on the fusion model, with several seeds.
+4. Find HINT's PR-AUC for our release (full text of the published paper) before any comparison.
+5. Final README with results and the dataset version.
 6. Setup for a fresh clone: `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt
    -r features/requirements.txt` (Windows; `.venv/bin/pip` elsewhere).
 
