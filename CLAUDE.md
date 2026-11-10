@@ -7,4 +7,5 @@ Rules for Claude in this repo:
 - Never use the `status` or `why_stop` columns as features. They leak the outcome.
 - Never commit data, `.npy` files, or secrets. The repo is public.
 - Never push to `main` or force-push. Work on a branch, open a PR, and ask before pushing, opening, or merging.
-- Check the harness with `python -m eval.test_harness` (run from the repo root).
+- Use the project venv: `.venv/Scripts/python` (create it from `requirements.txt`). Run checks from the repo root:
+  `python -m eval.test_harness` and `python -m models.test_baselines`.
