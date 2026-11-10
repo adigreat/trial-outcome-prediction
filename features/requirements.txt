@@ -1,0 +1,5 @@
+# Fingerprints + disease + assembly (no GPU, no torch). Versions are the ones the pipeline was built with.
+numpy>=2.0
+pandas>=2.2
+rdkit==2026.09.1      # pinned: Morgan bit assignment must not drift between builds
+pytest>=8

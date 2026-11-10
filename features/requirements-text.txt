@@ -1,0 +1,5 @@
+# Only for `python -m features.build text` (PubMedBERT). Install torch for your CUDA first:
+#   https://pytorch.org/get-started/locally/
+-r requirements.txt
+torch>=2.2
+transformers>=4.40
