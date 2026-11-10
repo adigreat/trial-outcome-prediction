@@ -112,7 +112,7 @@ section 6. Neither person owns both.
 
 ## 5. The interface contract
 
-**Agree on this before writing any code. Nothing else can start until it exists.**
+**STATUS: AGREED 2026-11-09 (Aditya, confirmed with Ananya). Changing it needs a section 9 entry first.**
 
 A produces, B consumes:
 
@@ -132,6 +132,20 @@ Every array is row-aligned by index. `trial_ids.npy` is the ground truth for ali
 if anything looks wrong downstream, check this first.
 
 If A changes a shape or a filename, it goes in section 9 and B gets told before the push.
+
+**Clarifications found when checking the real data (these are part of the contract):**
+
+- **One row per (trial, phase-file), not per trial.** 876 trials appear in two phase files
+  (the Phase 1/2 and Phase 2/3 trials). So `trial_ids` may repeat across phases, but the
+  pair `(trial_id, phase)` must be unique. `phase.npy` means "which of the TOP files this row
+  came from", not the trial's own label.
+- **Every row's data comes from the CSVs' `smiless`, `icdcodes`/`diseases` and `criteria`
+  columns only.** Never `status` or `why_stop` (section 3, leakage warning).
+- **Each phase is evaluated separately** on its own official test file, as HINT does.
+- **`split_train` = the official `*_train.csv` rows, `split_test` = the official `*_test.csv`
+  rows.** The official `*_valid.csv` rows are not in the contract yet; see section 10.
+- **B's checker:** `eval.harness.load_contract("data/processed")` validates all of the above.
+  A should run it on the arrays before telling B they are ready.
 
 ---
 
@@ -208,12 +222,19 @@ Append here. Newest at the bottom. One line each.
 |---|---|---|
 | 2026-11-09 | Dataset version: original Fu et al. TOP, official 2014 temporal split (not TrialBench) | Aditya |
 | 2026-11-09 | Person A (data and features) = Ananya, Person B (modelling and eval) = Aditya | Aditya |
+| 2026-11-09 | Section 5 contract agreed, with the (trial_id, phase) clarification | Aditya |
+| 2026-11-09 | Eval harness merged (`eval/harness.py`, PR #2). Results CSV has two extra columns, `n` and `pos_rate` | Aditya |
+| 2026-11-09 | `.npy` files are not shared through git. Each person regenerates them locally with a script in `features/` from the public TOP CSVs | Aditya |
+| 2026-11-09 | Repo made public. Branch protection on `main` enabled; all changes go through a PR | Aditya |
 
 ---
 
 ## 10. Open questions
 
 - [x] Which dataset version (section 3): Fu et al. original, decided 2026-11-09
+- [ ] **Validation set.** The contract has no validation split but TOP ships `*_valid.csv`.
+  Proposal: add `split_valid.npy` (the official valid rows), keep `split_train` train-only.
+  Ananya to confirm before building the arrays; Aditya then adds it to the harness checks.
 - [ ] Do we report Phase I at all, or focus on II and III where the signal is stronger?
 - [ ] Cost assumptions for the decision analysis — where do we source trial cost figures?
 
@@ -241,3 +262,38 @@ and the reverse.
 Start a session by pointing Claude at this file. Then say what you're working on. Before
 you finish for the day, update sections 9 and 10 so the other person's Claude picks up
 where you left off.
+
+---
+
+## 13. Status and next up (update this every session)
+
+**Last updated:** 2026-11-09, by Aditya (with Claude).
+
+**Done:** repo public with `main` protected; dataset and roles decided; section 5 contract agreed;
+evaluation harness merged with a self-check (`python -m eval.test_harness`); raw TOP CSVs
+counted; leakage columns identified.
+
+**Getting the raw data** (gitignored, ~40 MB, run from the repo root):
+
+```
+mkdir -p data/raw && cd data/raw
+for p in I II III; do for s in train valid test; do
+  curl -fLO https://raw.githubusercontent.com/futianfan/clinical-trial-outcome-prediction/main/data/phase_${p}_${s}.csv
+done; done
+```
+
+**Next up, Person A (Ananya), in `features/`:**
+1. Resolve the validation-set question in section 10.
+2. Script that reads the nine CSVs and writes `trial_ids`, `labels`, `phase`, `split_train`,
+   `split_test` to `data/processed/`. Row order must be identical across all arrays.
+3. Morgan fingerprints into `drug_features.npy` **first**, so B is unblocked. Some trials list
+   several drugs in `smiless`: decide how to combine them and write it in section 9.
+4. Run `eval.harness.load_contract("data/processed")`; if it passes, tell B.
+5. Then ICD embeddings, then PubMedBERT text embeddings (2 rows have empty `criteria`).
+
+**Next up, Person B (Aditya), in `eval/` and `models/`:**
+1. Wait for fingerprints; meanwhile build the baseline scripts against fake arrays.
+2. Logistic regression and XGBoost per phase, logged through `eval.harness.evaluate`.
+
+**Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
+the other person approves. Never push to `main`.

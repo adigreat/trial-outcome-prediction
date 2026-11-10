@@ -1,6 +1,10 @@
 @HANDOFF.md
 
 Rules for Claude in this repo:
-- HANDOFF.md above is the source of truth. Record decisions there (section 9) and update sections 9 and 10 before ending a session.
-- Stay inside the owner's folders (`features/` = A, `eval/` and `models/` = B) unless told otherwise.
-- Never commit data, `.npy` files, or secrets. Never push to `main` or force-push. Ask before any push, PR, or merge.
+- HANDOFF.md above is the source of truth. Read section 13 first: it says what is done and what is next for each person.
+- Record decisions in HANDOFF.md section 9, and update sections 9, 10 and 13 before ending a session. The other person's Claude only knows what is written there.
+- Ask which person the user is (A = Ananya, features; B = Aditya, modelling) and stay in that person's folders (`features/` = A, `eval/` and `models/` = B) unless told otherwise.
+- Never use the `status` or `why_stop` columns as features. They leak the outcome.
+- Never commit data, `.npy` files, or secrets. The repo is public.
+- Never push to `main` or force-push. Work on a branch, open a PR, and ask before pushing, opening, or merging.
+- Check the harness with `python -m eval.test_harness` (run from the repo root).
