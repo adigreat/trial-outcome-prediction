@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-10 (after the first real baseline run).
+Written for Ananya and Aditya. Last updated: 2026-11-10 (all three feature blocks built, first ablation done).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -71,62 +71,73 @@ Check before sending: `eval.harness.load_contract("data/processed")` must pass.
 
 **Done**
 - Dataset and roles decided, handoff format agreed.
-- Aditya's scoring code is merged. It now also logs a second PR-AUC that copies how HINT computes
-  its own (`pr_auc_hint`), so we can compare fairly later.
-- Ananya's feature pipeline is merged. Drug fingerprints and the disease encoding are ready.
-- Aditya built the arrays on his own machine and ran the first real baselines.
-- Decision-analysis code is written and tested (costs still to be chosen).
-- All the pull requests so far (#3 to #7) are merged. Aditya merged them as admin because Ananya had
-  not reviewed them yet. Ananya, please look over what landed and say if anything is wrong.
+- Aditya's scoring code is merged. It also logs a second PR-AUC that copies how HINT computes its own
+  (`pr_auc_hint`), so we can compare fairly later.
+- Ananya's feature pipeline is merged. All three feature blocks now exist: drug, disease and
+  eligibility text. Aditya ran the text step on his laptop GPU (about 25 minutes).
+- First real baselines for every combination of the three blocks.
+- A first error analysis by disease area and a first decision analysis.
+- Pull requests #3 to #7 are merged. Aditya merged them as admin because Ananya had not reviewed them
+  yet. Ananya, please look over what landed and say if anything is wrong.
 
-**First real numbers (test set, PR-AUC, higher is better)**
+**The numbers (test set, PR-AUC, XGBoost, higher is better)**
 
 | What the model sees | Phase I | Phase II | Phase III |
 |---|---|---|---|
 | Nothing (always guess "success") | 0.55 | 0.56 | 0.75 |
-| Drug only (best of 2 models) | 0.61 | 0.61 | 0.83 |
-| Disease only (best of 2 models) | 0.65 | 0.68 | 0.86 |
-| Drug + disease (best of 2 models) | 0.63 | 0.66 | 0.85 |
+| Drug only | 0.61 | 0.61 | 0.83 |
+| Disease only | 0.65 | 0.68 | 0.86 |
+| Text only | 0.63 | 0.67 | 0.85 |
+| Drug + disease | 0.63 | 0.66 | 0.85 |
+| Drug + text | 0.63 | 0.69 | 0.85 |
+| Disease + text | 0.65 | 0.68 | 0.84 |
+| All three | 0.66 | 0.67 | 0.84 |
 
 What it means in plain words:
-- The **disease** carries more signal than the **drug** in every phase.
-- Adding the drug to the disease made it a little **worse**, not better. Probably the drug
-  fingerprint is too big and noisy for this few trials.
+- The **disease** and the **eligibility text** both help, by about the same amount. The **drug**
+  fingerprint helps least.
+- Putting the blocks together does **not** beat the disease alone with this simple model. That is the
+  job of the fusion model, which is next.
 - Phase III looks great only because 75% of its test trials succeed anyway. Look at the gap above
   the "always guess success" row, not the raw number.
-- These are first, untuned, one-seed numbers. A point or two is noise.
-- We do not have a text number yet, so we cannot say how much the eligibility text helps.
-- These numbers cannot be compared with HINT's paper yet (different test set and a different way of
-  computing PR-AUC).
+- These are untuned, one-seed numbers. A point or two is noise.
+- They cannot be compared with HINT's paper yet.
+
+**Where the model struggles (error analysis)**
+- **Cancer trials are the hard ones.** They fail more often than other areas, and inside cancer the
+  model is close to guessing in Phase I.
+- In Phase III the model is too pessimistic about cancer: it expects about 41% to succeed and 60% do.
+
+**Would a sponsor act on it? (decision analysis)**
+- Not yet. If stopping a good trial by mistake costs more than about one trial's budget, the model
+  loses money or stops almost nothing. We use published average trial costs ($3.8M / $13.4M / $19.9M
+  for Phase 1 / 2 / 3) and try several guesses for what a lost success is worth.
 
 **Not done yet**
-- The eligibility-text encoding (PubMedBERT). It needs a computer with a GPU, which is Ananya's job.
-- The fusion model, the three-way ablation, error analysis by disease area, the decision analysis
-  on real predictions, and the final README.
+- The fusion model (the main model), tuning, more seeds, and the final README.
 
 ## 7. Next steps, why, and how
 
 ### Ananya
-1. **Look at what was merged and answer two questions** in `HANDOFF.md` section 10.
-   *Why:* we merged your pipeline (PR #6) after fixing a small text clash in HANDOFF, and Aditya's
-   Claude needs two answers: keep or drop the 106 trials that sit in train for one phase and valid
-   for another, and whether the disease multi-hot is fine or a dense version is also wanted.
-   *How:* read section 9 and section 10 of `HANDOFF.md`, then write your answers there.
-2. **Run the PubMedBERT text step on a computer with a GPU.**
-   *Why:* it is the last missing input, and we cannot ablate or fuse the text without it.
-   *How:* `pip install -r features/requirements-text.txt`, then `python -m features.build text`
-   (it can resume if it crashes). Check `load_contract`, then tell Aditya the text block is ready.
-3. **Fix the Windows crash in `features/`.** On Windows the build stops at the very end with a
-   `UnicodeEncodeError` because the report file is written without UTF-8. Aditya got around it with
-   `PYTHONUTF8=1`. The real fix is to open that file with `encoding="utf-8"`.
+1. **Look at what was merged and what Aditya decided.**
+   *Why:* PRs #3 to #7 went in without your review, and your two questions were answered (keep the 106
+   trials; the disease multi-hot is fine as is).
+   *How:* read sections 9, 10 and 13 of `HANDOFF.md` and say if anything is wrong.
+2. **Fix the Windows crash in `features/`.**
+   *Why:* on Windows the build stops at the end with a `UnicodeEncodeError`. Aditya got around it with
+   `PYTHONUTF8=1`.
+   *How:* open the validation report file with `encoding="utf-8"`.
+3. **Check one odd count.** Many trials carry an ICD chapter P (perinatal) or Z code. Is that really in
+   the data, or a parsing slip? (`HANDOFF.md` section 10.)
+4. **Then pick a shared task:** writing up the error analysis or the decision analysis.
 
 ### Aditya
-1. **Fusion model**, once text exists: join the blocks and train a small MLP.
-   *Why:* it is the main model of the project. *How:* needs PyTorch (not installed yet).
-2. **Ablation table:** drug / disease / text, each alone and in combination, for every phase.
-   *Why:* this is the part that makes the project ours. *How:* `python -m models.baselines --blocks ...`.
-3. **Error analysis by disease area**, then the **decision analysis** on real predictions with
-   `eval.decision.threshold_table`. We still need to choose the cost source for it.
+1. **Fusion model:** join the three blocks and train a small neural network (MLP).
+   *Why:* simple stacking did not beat the disease block alone, so we need a model that can combine them.
+   *How:* PyTorch is already installed in the project venv.
+2. **Redo the ablation, error analysis and decision analysis on the fusion model**, with several seeds.
+   *Why:* one seed is not enough to trust a difference of a point or two.
+3. **Find HINT's real PR-AUC for our dataset version** before comparing anything.
 4. **README:** add the results and the dataset version once the model is done.
 
 ## 8. About the HINT comparison (be careful here)
