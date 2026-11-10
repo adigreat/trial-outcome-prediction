@@ -104,7 +104,7 @@ def test_hf_embedder_with_tiny_local_bert(tmp_path):
     torch = pytest.importorskip("torch")
     transformers = pytest.importorskip("transformers")
     vocab = ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]", "age", "adults", "pregnancy", "over", "18"]
-    (tmp_path / "vocab.txt").write_text("\n".join(vocab))
+    (tmp_path / "vocab.txt").write_text("\n".join(vocab), encoding="utf-8")
     transformers.BertTokenizer(str(tmp_path / "vocab.txt")).save_pretrained(tmp_path)
     cfg = transformers.BertConfig(vocab_size=len(vocab), hidden_size=DIM, num_hidden_layers=1,
                                   num_attention_heads=2, intermediate_size=16)

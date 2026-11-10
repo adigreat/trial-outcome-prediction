@@ -251,7 +251,7 @@ def save_master(df, rep, out_dir=C.INTERIM_DIR):
     for c in ("smiles", "icd_codes", "diseases"):
         m[c] = m[c].map(json.dumps)
     m.to_csv(out_dir / "master.csv", index_label="row")
-    (out_dir / "master_report.json").write_text(json.dumps(rep, indent=2, sort_keys=True))
+    (out_dir / "master_report.json").write_text(json.dumps(rep, indent=2, sort_keys=True), encoding="utf-8")
     return out_dir / "master.csv"
 
 
@@ -272,7 +272,7 @@ def get_master(raw_dir=C.RAW_DIR, interim_dir=C.INTERIM_DIR, strict_version=True
     path = Path(interim_dir) / "master.csv"
     rep_path = Path(interim_dir) / "master_report.json"
     if path.exists() and rep_path.exists() and not rebuild:
-        rep = json.loads(rep_path.read_text())
+        rep = json.loads(rep_path.read_text(encoding="utf-8"))
         current = verify_raw(raw_dir, strict=strict_version)
         if current == rep.get("csv_sha256"):
             m = read_master(path)

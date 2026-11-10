@@ -47,11 +47,11 @@ def test_contract_alignment(small_master, tmp_path):
         bits = [b for b in bits if b is not None]
         want = np.bitwise_or.reduce(bits).astype(np.float32) if bits else np.zeros(2048, np.float32)
         assert np.array_equal(a["drug_features"][i], want), m.nctid.iloc[i]
-    names = json.loads((out / "feature_names" / "disease_features.json").read_text())
+    names = json.loads((out / "feature_names" / "disease_features.json").read_text(encoding="utf-8"))
     assert len(names) == a["disease_features"].shape[1]
     for k, f in manifest["files"].items():
         assert list(np.load(out / k).shape) == f["shape"]
-    meta = (out / "trial_meta.csv").read_text().splitlines()
+    meta = (out / "trial_meta.csv").read_text(encoding="utf-8").splitlines()
     assert "n_valid_smiles" in meta[0] and "n_icd" in meta[0] and "status" not in meta[0]
     assert len(meta) == len(m) + 1
 

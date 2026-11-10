@@ -100,12 +100,12 @@ class SentenceCache:
         self.dir.mkdir(parents=True, exist_ok=True)
         info = self.dir / "settings.json"
         if info.exists():
-            old = json.loads(info.read_text())
+            old = json.loads(info.read_text(encoding="utf-8"))
             if old != settings:
                 raise ValueError(f"text cache at {self.dir} was built with different settings:\n{old}\n"
                                  f"vs now:\n{settings}\nDelete the folder or point --text-cache elsewhere.")
         else:
-            info.write_text(json.dumps(settings, indent=2, sort_keys=True))
+            info.write_text(json.dumps(settings, indent=2, sort_keys=True), encoding="utf-8")
         self.settings = settings
         self.index = {}       # key -> (shard_path, row)
         self._loaded = {}
@@ -206,9 +206,9 @@ def encode(master, embed_fn=None, cache_dir=C.TEXT_CACHE_DIR, settings=None,
             if progress:
                 log.info("text: embedded %d / %d", min(b + shard_size, len(todo)), len(todo))
         if getattr(embed_fn, "info", None):
-            (cache.dir / "model_info.json").write_text(json.dumps(embed_fn.info, indent=2))
+            (cache.dir / "model_info.json").write_text(json.dumps(embed_fn.info, indent=2), encoding="utf-8")
     info_path = cache.dir / "model_info.json"
-    model_info = json.loads(info_path.read_text()) if info_path.exists() else None
+    model_info = json.loads(info_path.read_text(encoding="utf-8")) if info_path.exists() else None
 
     d = settings["dim"]
     X = np.zeros((len(master), 2 * d), dtype=np.float32)
