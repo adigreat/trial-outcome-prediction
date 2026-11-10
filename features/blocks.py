@@ -30,7 +30,7 @@ def _atomic_save_npy(path, arr):
 def _atomic_write_text(path, text):
     path = Path(path)
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text)
+    tmp.write_text(text, encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -61,7 +61,7 @@ def load_block(name, master, block_dir=C.BLOCK_DIR):
     p, pm, pi = block_dir / f"{name}.npy", block_dir / f"{name}.json", block_dir / f"{name}_ids.npy"
     if not (p.exists() and pm.exists() and pi.exists()):
         return None, "not built"
-    meta = json.loads(pm.read_text())
+    meta = json.loads(pm.read_text(encoding="utf-8"))
     if meta.get("table_hash") != table_hash(master):
         return None, "stale (built against a different master table)"
     ids = np.load(pi, allow_pickle=False)
