@@ -112,7 +112,7 @@ section 6. Neither person owns both.
 
 ## 5. The interface contract
 
-**Agree on this before writing any code. Nothing else can start until it exists.**
+**STATUS: AGREED 2026-11-09 (Aditya, confirmed with Ananya). Changing it needs a section 9 entry first.**
 
 A produces, B consumes:
 
@@ -124,14 +124,29 @@ data/processed/
   trial_ids.npy           # (n_trials,)  — alignment key, same order as all of the above
   labels.npy              # (n_trials,)  — 1 = success, 0 = failure
   phase.npy               # (n_trials,)  — 1, 2, or 3
-  split_train.npy         # indices into the arrays above
-  split_test.npy          # indices
+  split_train.npy         # indices into the arrays above (official *_train.csv rows)
+  split_valid.npy         # indices (official *_valid.csv rows) — added 2026-11-09
+  split_test.npy          # indices (official *_test.csv rows)
 ```
 
 Every array is row-aligned by index. `trial_ids.npy` is the ground truth for alignment —
 if anything looks wrong downstream, check this first.
 
 If A changes a shape or a filename, it goes in section 9 and B gets told before the push.
+
+**Clarifications found when checking the real data (these are part of the contract):**
+
+- **One row per (trial, phase-file), not per trial.** 876 trials appear in two phase files
+  (the Phase 1/2 and Phase 2/3 trials). So `trial_ids` may repeat across phases, but the
+  pair `(trial_id, phase)` must be unique. `phase.npy` means "which of the TOP files this row
+  came from", not the trial's own label.
+- **Every row's data comes from the CSVs' `smiless`, `icdcodes`/`diseases` and `criteria`
+  columns only.** Never `status` or `why_stop` (section 3, leakage warning).
+- **Each phase is evaluated separately** on its own official test file, as HINT does.
+- **`split_train` / `split_valid` / `split_test` = the official `*_train.csv` / `*_valid.csv` /
+  `*_test.csv` rows.** The three index sets must not overlap. Tune on valid, report on test.
+- **B's checker:** `eval.harness.load_contract("data/processed")` validates all of the above.
+  A should run it on the arrays before telling B they are ready.
 
 ---
 
@@ -187,8 +202,11 @@ correctly kill, and how many successful ones would we wrongly kill? Put a cost o
 ## 8. Expectations
 
 **We will probably not beat HINT.** It is a purpose-built research model with a
-hierarchical architecture. Published numbers are roughly PR-AUC 0.57 / 0.65 / 0.81 for
-Phase I / II / III — check these against whichever dataset version we pick before quoting them.
+hierarchical architecture. **Do not quote 0.57 / 0.65 / 0.81 — we could not source them
+(2026-11-10).** What we did find, from the HINT arXiv paper (2102.04252 v3, Table 3, PR-AUC
+Phase I / II / III): 0.764 / 0.602 / 0.618, on a different test set (312 / 789 / 1,141 trials,
+registration-date cutoffs in 2014, 15% of train held out for validation). That is not our
+release (627 / 1,654 / 1,146), so it is not a like-for-like comparison. See section 13.
 
 Getting within a few points using simpler components, with ablations that explain *why*,
 is a better story than a vague state-of-the-art claim nobody believes. Do not inflate
@@ -208,6 +226,13 @@ Append here. Newest at the bottom. One line each.
 |---|---|---|
 | 2026-11-09 | Dataset version: original Fu et al. TOP, official 2014 temporal split (not TrialBench) | Aditya |
 | 2026-11-09 | Person A (data and features) = Ananya, Person B (modelling and eval) = Aditya | Aditya |
+| 2026-11-09 | Section 5 contract agreed, with the (trial_id, phase) clarification | Aditya |
+| 2026-11-09 | Eval harness merged (`eval/harness.py`, PR #2). Results CSV has two extra columns, `n` and `pos_rate` | Aditya |
+| 2026-11-09 | `.npy` files are not shared through git. Each person regenerates them locally with a script in `features/` from the public TOP CSVs | Aditya |
+| 2026-11-09 | Repo made public. Branch protection on `main` enabled; all changes go through a PR | Aditya |
+| 2026-11-09 | Contract gains `split_valid.npy` (official valid rows). `load_contract` now requires it and checks the three splits do not overlap. Ananya must produce it | Aditya (Ananya to confirm) |
+| 2026-11-09 | Report all three phases, Phase I included. Phase I is the smallest (627 test trials), so show `n` beside every number and say it is noisy. Dropping it would look like cherry-picking and HINT reports it | Aditya |
+| 2026-11-09 | Baselines in `models/baselines.py` (logreg, xgboost). One model per phase, fit on train, logged on valid and test. Project venv `.venv/` from `requirements.txt` | Aditya |
 | 2026-11-10 | Dataset pinned to TOP upstream commit `8dc0497`; the 9 CSVs are hash-checked on load. Row key is `(trial_id, phase)`; row order is phase → train/valid/test → nctid | Ananya |
 | 2026-11-10 | Contract additions (nothing renamed or reshaped): `split_valid.npy` (official TOP valid, 907 rows; `split_train` = official train only, 8143), `manifest.json`, `feature_names/`, `trial_meta.csv`, `validation_report.md` | Ananya |
 | 2026-11-10 | Blocks not built yet are written as `(n, 0)` float32 placeholders so `load_contract()` works with fingerprints alone; `manifest.json` `blocks.*.status` says `ready` or `pending` | Ananya |
@@ -220,8 +245,16 @@ Append here. Newest at the bottom. One line each.
 ## 10. Open questions
 
 - [x] Which dataset version (section 3): Fu et al. original, decided 2026-11-09
-- [ ] Do we report Phase I at all, or focus on II and III where the signal is stronger?
-- [ ] Cost assumptions for the decision analysis — where do we source trial cost figures?
+- [x] Validation set: `split_valid.npy` added to the contract and the harness (2026-11-09).
+- [x] Phase I: report all three phases, flag Phase I as noisy (section 9, 2026-11-09).
+- [ ] Cost assumptions for the decision analysis. Candidate sources found 2026-11-10 (from
+  search summaries, open the primary source before quoting): Sertkaya et al., Clin Trials 2016
+  (per-study cost by phase and therapeutic area: Phase 1 about $1.4M to $6.6M, Phase 2 about
+  $7.0M to $19.6M, Phase 3 about $11.5M to $52.9M); CBO per-drug figures (about $28M / $65M /
+  $282M for Phase 1 / 2 / 3, per drug completing all phases, so not per trial). Decide which
+  one the decision analysis uses and state it.
+- [ ] Which HINT numbers are the right comparison for our release (section 13)?
+- [ ] Ananya's Claude cannot work on the repo yet (section 13). Pick a route.
 - [ ] (Aditya) 106 trials are in train for one phase and valid for another (official split). Fine for per-phase models; for a pooled model, either accept the slightly optimistic validation score or drop those rows from `split_valid`. Your call
 - [ ] (Aditya) Disease block is a multi-hot, not a pre-trained embedding (see section 9). OK with that, or do you want a fixed dense one (e.g. SVD fit on train) as well?
 - [x] Fingerprints shipped 2026-11-10: `python -m features.build fingerprints`, see `features/README.md`. Disease block also ready; text pending a GPU run on Ananya's machine
@@ -250,3 +283,80 @@ and the reverse.
 Start a session by pointing Claude at this file. Then say what you're working on. Before
 you finish for the day, update sections 9 and 10 so the other person's Claude picks up
 where you left off.
+
+---
+
+## 13. Status and next up (update this every session)
+
+**Last updated:** 2026-11-10, by Aditya. Research notes only: no code changed.
+Still no activity from Ananya (checked `gh pr list`, branches, reviews on 2026-11-10).
+
+**Done:** repo public with `main` protected (1 approving review required); dataset and roles
+decided; section 5 contract agreed, now including `split_valid.npy`; evaluation harness merged
+with a self-check (`python -m eval.test_harness`); baselines written and tested on fake data;
+raw TOP CSVs counted; leakage columns identified; Phase I decision made (report all three).
+
+**Where we stopped (2026-11-09, end of Aditya's session):**
+- PR #3 (section 5 agreed, status section) and PR #4 (baselines, `split_valid`, `requirements.txt`)
+  are OPEN with no reviews. Ananya is the only other collaborator, so she has to approve them.
+  Merge #3 first. #4 is stacked on #3's branch (`aditya/section5-agreed`), so its diff shrinks
+  once #3 is in. Until both merge, `main` does not have the contract status, `split_valid`,
+  or the baselines.
+- Aditya's local checkout was on branch `aditya/baselines`. After #3 merges: `git checkout main`,
+  `git pull`, and if #4 shows conflicts, rebase `aditya/baselines` onto `main`.
+- Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
+  that session. It was blocked once already. Aditya can still choose to do it.
+- No activity from Ananya yet as of this update: no branches, reviews, or comments. We have not
+  verified that she has seen the invite or the PRs, nor that she agreed to `split_valid`.
+  Check `gh pr list` and `git branch -r` first.
+- `results/results.csv` does not exist yet. No real numbers have been produced.
+
+**Not verified, do not quote yet:**
+- HINT's published PR-AUC for OUR release. 0.57 / 0.65 / 0.81 has no source. The arXiv v3
+  paper (Table 3) gives 0.764 / 0.602 / 0.618, but its test sets (312 / 789 / 1,141) differ from
+  ours. The abstract says 0.772 / 0.607 / 0.623, so the abstract and Table 3 disagree. The PubMed
+  record for the published HINT paper (35465223) reports F1 0.665 / 0.620 / 0.847 on 627 / 1,653 /
+  1,140 trials, which matches our CSV sizes, so that is probably the right version to compare
+  against. We could not retrieve its PR-AUC, so find it in the full text first.
+- The metric definition HINT uses: the paper only says "PR-AUC" with bootstrap error bars, no
+  formula. Not yet checked in the HINT code. sklearn's `average_precision_score` is the
+  step-wise version and may differ slightly.
+- XGBoost settings (200 trees, depth 4) are untuned defaults, so the baselines are a first floor.
+- Trial cost figures for the decision analysis: candidate sources are in section 10, none
+  verified against the primary paper.
+
+**Ananya's Claude cannot work yet (2026-11-10):** Ananya sees "The Claude GitHub App on adigreat
+isn't connected. Only adigreat can connect it." The app IS installed on `adigreat` (all repos)
+and connected on Aditya's Claude account. This only affects cloud/web Claude sessions. It does
+not block her working locally: clone the repo, use her own `gh` login, run Claude Code in the
+terminal. If she needs cloud sessions, the options are a fork under her own account (install the
+app there, PR back to `adigreat`) or moving the repo to a GitHub org both of us belong to.
+
+**Getting the raw data** (gitignored, ~40 MB, run from the repo root):
+
+```
+mkdir -p data/raw && cd data/raw
+for p in I II III; do for s in train valid test; do
+  curl -fLO https://raw.githubusercontent.com/futianfan/clinical-trial-outcome-prediction/main/data/phase_${p}_${s}.csv
+done; done
+```
+
+**Next up, Person A (Ananya), in `features/`:**
+1. Validation set is decided: also write `split_valid.npy` (section 5).
+2. Script that reads the nine CSVs and writes `trial_ids`, `labels`, `phase`, `split_train`,
+   `split_valid`, `split_test` to `data/processed/`. Row order must be identical across all arrays.
+3. Morgan fingerprints into `drug_features.npy` **first**, so B is unblocked. Some trials list
+   several drugs in `smiless`: decide how to combine them and write it in section 9.
+4. Run `eval.harness.load_contract("data/processed")`; if it passes, tell B.
+5. Then ICD embeddings, then PubMedBERT text embeddings (2 rows have empty `criteria`).
+
+**Next up, Person B (Aditya), in `eval/` and `models/`:**
+1. DONE: `models/baselines.py` (logreg + xgboost per phase), tested on fake arrays with
+   `python -m models.test_baselines`. Needs the real arrays to produce real numbers.
+2. When Ananya ships fingerprints: `python -m models.baselines --blocks drug`, then review the
+   first real rows in `results/results.csv`.
+3. Setup for a fresh clone: `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt`
+   (Windows; `.venv/bin/pip` elsewhere).
+
+**Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
+the other person approves. Never push to `main`.
