@@ -35,9 +35,13 @@ def test_all():
         assert len(out) == 6, "second call must append, not overwrite"
         assert all(0.3 < float(r["roc_auc"]) < 0.7 for r in out[3:]), "random scores should sit near 0.5"
 
+        # HINT-style PR-AUC scores the 0/1 predictions, so it differs from the threshold-free one
+        h = evaluate([0, 1, 1, 0], [0.4, 0.45, 0.9, 0.1], [1, 1, 1, 1], "hint", path=t / "r3.csv")[0]
+        assert h["pr_auc"] == 1.0 and h["pr_auc_hint"] == 0.75, h
+
         # a phase with one class must not crash
         r1 = evaluate([1, 1, 1], [0.2, 0.5, 0.9], [1, 1, 1], "single", path=t / "r2.csv")
-        assert r1[0]["pr_auc"] == ""
+        assert r1[0]["pr_auc"] == "" and r1[0]["pr_auc_hint"] == ""
 
         # same trial in two phases is legal; the same (trial, phase) twice is not
         ids, ph = a["trial_ids"].copy(), a["phase"].copy()
