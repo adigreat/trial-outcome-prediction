@@ -208,6 +208,12 @@ Append here. Newest at the bottom. One line each.
 |---|---|---|
 | 2026-11-09 | Dataset version: original Fu et al. TOP, official 2014 temporal split (not TrialBench) | Aditya |
 | 2026-11-09 | Person A (data and features) = Ananya, Person B (modelling and eval) = Aditya | Aditya |
+| 2026-11-10 | Dataset pinned to TOP upstream commit `8dc0497`; the 9 CSVs are hash-checked on load. Row key is `(trial_id, phase)`; row order is phase → train/valid/test → nctid | Ananya |
+| 2026-11-10 | Contract additions (nothing renamed or reshaped): `split_valid.npy` (official TOP valid, 907 rows; `split_train` = official train only, 8143), `manifest.json`, `feature_names/`, `trial_meta.csv`, `validation_report.md` | Ananya |
+| 2026-11-10 | Blocks not built yet are written as `(n, 0)` float32 placeholders so `load_contract()` works with fingerprints alone; `manifest.json` `blocks.*.status` says `ready` or `pending` | Ananya |
+| 2026-11-10 | Drug = Morgan r=2, 2048 bits, OR over the trial's drugs, float32 0/1 | Ananya |
+| 2026-11-10 | Disease = ICD-10 multi-hot (chapter + 3-char category + full code, ≥5 train trials, + 3 OOV flags = 1983 dims), vocab fit on train only. The "learned embedding" is learned by B's model as a linear layer on this | Ananya |
+| 2026-11-10 | Text = frozen `microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext` (PubMedBERT), masked mean pool per criterion bullet, then [inclusion mean ‖ exclusion mean] = 1536 dims | Ananya |
 
 ---
 
@@ -216,6 +222,9 @@ Append here. Newest at the bottom. One line each.
 - [x] Which dataset version (section 3): Fu et al. original, decided 2026-11-09
 - [ ] Do we report Phase I at all, or focus on II and III where the signal is stronger?
 - [ ] Cost assumptions for the decision analysis — where do we source trial cost figures?
+- [ ] (Aditya) 106 trials are in train for one phase and valid for another (official split). Fine for per-phase models; for a pooled model, either accept the slightly optimistic validation score or drop those rows from `split_valid`. Your call
+- [ ] (Aditya) Disease block is a multi-hot, not a pre-trained embedding (see section 9). OK with that, or do you want a fixed dense one (e.g. SVD fit on train) as well?
+- [x] Fingerprints shipped 2026-11-10: `python -m features.build fingerprints`, see `features/README.md`. Disease block also ready; text pending a GPU run on Ananya's machine
 
 ---
 
