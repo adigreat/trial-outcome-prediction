@@ -1,8 +1,17 @@
-"""Error analysis by disease area (Person B): where does the model do well or badly on the test split?
+"""Error analysis by disease area (owner: Ananya since 2026-11-10): where does the model do well or badly
+on the test split?
 
-Run from the repo root:  python -m models.error_analysis --model xgboost --blocks disease
-Appends to results/error_analysis.csv. Disease area = ICD-10 chapter letter, read from the
-`icd_chapter_*` columns of the disease block. A trial with codes in two chapters counts in both.
+Run from the repo root:  python -m models.error_analysis --model fusion --blocks drug,disease,text
+Appends to results/error_analysis.csv. Disease area = ICD-10 chapter, read from the disease block:
+- Chapter letter from the `icd_chapter_*` columns. A trial with codes in two areas counts in both.
+- Letter D is split with the `icd_category_D*` columns: D00-D49 (in situ, benign and uncertain
+  neoplasms) and D50-D89 (blood and immune). A trial whose only D codes are categories outside the
+  train vocabulary goes to "D (unresolved)".
+- Chapters P (perinatal) and Z (health-status factors) count only for trials that have no code in any
+  other chapter. In TOP they are almost always side effects of matching a disease name to ICD codes:
+  "diabetes" also pulls in P70.2 (neonatal diabetes) and Z83.3 (family history of diabetes), "HIV" pulls
+  in Z21 and Z71.7, "cystic fibrosis" pulls in P09.4. Counting them would list the same diabetes or
+  HIV trials a second time under a misleading name (HANDOFF section 10, answered 2026-11-11).
 """
 import argparse
 import csv
@@ -19,12 +28,13 @@ from models.baselines import MODELS, fit, load_blocks
 OUT = Path(__file__).resolve().parent.parent / "results" / "error_analysis.csv"
 COLUMNS = ["date", "config", "phase", "area", "n", "pos_rate", "mean_pred", "pr_auc", "roc_auc",
            "accuracy_at_0.5", "wrong_fail", "wrong_success"]
-# shortcut: letter-level chapters, so D mixes benign neoplasms with blood disorders; split D at D50 if that matters
-AREAS = {"A": "infectious", "B": "infectious", "C": "cancer", "D": "neoplasm/blood", "E": "endocrine/metabolic",
+AREAS = {"A": "infectious", "B": "infectious", "C": "cancer", "E": "endocrine/metabolic",
          "F": "mental", "G": "nervous system", "H": "eye/ear", "I": "circulatory", "J": "respiratory",
          "K": "digestive", "L": "skin", "M": "musculoskeletal", "N": "genitourinary", "O": "pregnancy",
-         "P": "perinatal", "Q": "congenital", "R": "symptoms", "S": "injury", "T": "injury/poisoning",
-         "Y": "external causes", "Z": "health-status factors"}
+         "P": "perinatal (only code)", "Q": "congenital", "R": "symptoms", "S": "injury", "T": "injury/poisoning",
+         "Y": "external causes", "Z": "health-status factors (only code)"}
+D_LOW, D_HIGH, D_UNRESOLVED = "neoplasm in situ/benign (D00-D49)", "blood/immune (D50-D89)", "D (unresolved)"
+SECONDARY = ("P", "Z")   # counted only when the trial has no other chapter
 
 
 def by_group(y_true, p_success, groups, min_n=30):
@@ -52,12 +62,35 @@ def by_group(y_true, p_success, groups, min_n=30):
 
 
 def chapter_groups(disease_features, names):
-    """{area label: mask} from the icd_chapter_* columns. Letters that share a label are merged."""
+    """{area label: mask}. Letters that share a label are merged. See the module docstring for D, P and Z."""
+    X = np.asarray(disease_features)
+    chap = {n[len("icd_chapter_"):]: X[:, j] > 0 for j, n in enumerate(names)
+            if n.startswith("icd_chapter_") and n != "icd_chapter_OOV"}
+    if not chap:
+        return {}
+    primary = np.zeros(len(X), dtype=bool)
+    for letter, m in chap.items():
+        if letter not in SECONDARY:
+            primary |= m
     groups = {}
-    for j, name in enumerate(names):
-        if name.startswith("icd_chapter_") and name != "icd_chapter_OOV":
-            label = AREAS.get(name[len("icd_chapter_"):], name)
-            groups[label] = groups.get(label, False) | (disease_features[:, j] > 0)
+
+    def add(label, m):
+        groups[label] = groups.get(label, np.zeros(len(X), dtype=bool)) | m
+
+    for letter, m in chap.items():
+        if letter == "D":
+            low = np.zeros(len(X), dtype=bool)
+            high = np.zeros(len(X), dtype=bool)
+            for j, n in enumerate(names):
+                if n.startswith("icd_category_D") and n[len("icd_category_D"):][:2].isdigit():
+                    (low if int(n[len("icd_category_D"):][:2]) < 50 else high)[:] |= X[:, j] > 0
+            add(D_LOW, m & low)
+            add(D_HIGH, m & high)
+            add(D_UNRESOLVED, m & ~low & ~high)
+        elif letter in SECONDARY:
+            add(AREAS[letter], m & ~primary)
+        else:
+            add(AREAS.get(letter, f"icd_chapter_{letter}"), m)
     return groups
 
 
@@ -82,7 +115,7 @@ def run(folder="data/processed", model="xgboost", blocks=("disease",), seed=0, p
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     new = not path.exists()
-    with open(path, "a", newline="") as f:  # append-only, like results.csv
+    with open(path, "a", newline="", encoding="utf-8") as f:  # append-only, like results.csv
         w = csv.DictWriter(f, COLUMNS)
         if new:
             w.writeheader()
