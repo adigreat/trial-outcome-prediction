@@ -25,16 +25,32 @@ feats = np.array([[1, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0]])
 cg = chapter_groups(feats, ["icd_chapter_A", "icd_chapter_B", "icd_chapter_C", "icd_chapter_OOV"])
 assert set(cg) == {"infectious", "cancer"} and cg["infectious"].tolist() == [True, True, False]
 
+# D is split at D50 via the category columns; a D trial with no known D category is "unresolved"
+names = ["icd_chapter_D", "icd_chapter_E", "icd_chapter_P", "icd_chapter_Z", "icd_category_D02", "icd_category_D69"]
+feats = np.array([[1, 0, 0, 0, 1, 0],    # in situ neoplasm
+                  [1, 0, 0, 0, 0, 1],    # blood
+                  [1, 0, 0, 0, 0, 0],    # D code outside the vocabulary
+                  [0, 1, 1, 1, 0, 0],    # diabetes with the side-effect P and Z codes
+                  [0, 0, 0, 1, 0, 0]])   # only a Z code
+cg = chapter_groups(feats, names)
+assert cg["neoplasm in situ/benign (D00-D49)"].tolist() == [True, False, False, False, False]
+assert cg["blood/immune (D50-D89)"].tolist() == [False, True, False, False, False]
+assert cg["D (unresolved)"].tolist() == [False, False, True, False, False]
+# P and Z count only when the trial has nothing else
+assert cg["endocrine/metabolic"].tolist() == [False, False, False, True, False]
+assert not cg["perinatal (only code)"].any()
+assert cg["health-status factors (only code)"].tolist() == [False, False, False, False, True]
+
 with tempfile.TemporaryDirectory() as t:
     t = Path(t)
     fake_contract(t)
     (t / "feature_names").mkdir()
     (t / "feature_names" / "disease_features.json").write_text(json.dumps(
-        ["icd_chapter_C", "icd_chapter_I", "icd_category_C34", "icd_chapter_OOV"]))
+        ["icd_chapter_C", "icd_chapter_I", "icd_category_C34", "icd_chapter_OOV"]), encoding="utf-8")
     out = run(folder=t, model="logreg", blocks=("drug", "disease"), path=t / "e.csv")
     assert {r["area"] for r in out} == {"ALL", "cancer", "circulatory"} and {r["phase"] for r in out} == {1, 2, 3}
     run(folder=t, model="logreg", path=t / "e.csv")
-    assert len(list(csv.DictReader(open(t / "e.csv")))) == 2 * len(out), "second run must append"
+    assert len(list(csv.DictReader(open(t / "e.csv", encoding="utf-8")))) == 2 * len(out), "second run must append"
 print("ok")
 
 # decision_run: 3 phases x 3 loss multiples, thresholds come from valid, nothing killed means net 0
