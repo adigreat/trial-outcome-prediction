@@ -242,6 +242,7 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-10 | PRs #3, #4, #5 merged with `gh pr merge --admin` on Aditya's explicit instruction, because Ananya had not reviewed them | Aditya |
 | 2026-11-10 | Results CSV gains `pr_auc_hint`: average precision on predictions cut to 0/1 at 0.5, which is how HINT's code computes its "PR-AUC". `pr_auc` stays the standard threshold-free metric. Use `pr_auc_hint` only to compare with HINT's paper, and label it | Aditya |
 | 2026-11-10 | `eval/decision.py`: threshold table (true kills, wrong kills, net value). Costs are inputs; the source is still open (section 10) | Aditya |
+| 2026-11-10 | Model: first real floor run (drug, disease, drug+disease; table in section 13). Docs rule added to `CLAUDE.md`: HANDOFF.md, EASY_LANGUAGE.md and README.md are updated together whenever the state changes | Aditya |
 
 ---
 
@@ -292,30 +293,54 @@ where you left off.
 ## 13. Status and next up (update this every session)
 
 **Last updated:** 2026-11-10, by Aditya.
-PRs #3, #4, #5, #6 and #7 were admin-merged into `main` on Aditya's instruction, without a review from
-the other person. For #6 (Ananya's features pipeline), Aditya first merged `main` into
-`ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was not
-changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
-`main` now has the contract, `split_valid`, the baselines, the features pipeline (fingerprints and
-disease block ready, text block still a placeholder), `eval/decision.py`, the `pr_auc_hint` column and
-`EASY_LANGUAGE.md`. Her two questions for Aditya in section 10 are open.
+PRs #3 to #7 are merged into `main`. #3 to #7 were admin-merged on Aditya's instruction, without a
+review from the other person. For #6 (Ananya's features pipeline), Aditya first merged `main`
+into `ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was
+not changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
+
+**First real numbers (2026-11-10, Aditya's machine, seed 0, untuned defaults).** Built locally with
+`python -m features.build fetch / fingerprints / disease`, then `python -m models.baselines --blocks ...`.
+Test split, PR-AUC (the standard, threshold-free one) with ROC-AUC in brackets. The "always predict
+success" floor for PR-AUC is the positive rate, shown on the first row. Full rows, with `pr_auc_hint`
+and the valid split, are in `results/results.csv`.
+
+| model / blocks | Phase I (n=627) | Phase II (n=1654) | Phase III (n=1146) |
+|---|---|---|---|
+| positive rate (PR-AUC floor) | 0.553 | 0.555 | 0.750 |
+| logreg, drug | 0.583 (0.531) | 0.580 (0.534) | 0.777 (0.540) |
+| xgboost, drug | 0.609 (0.556) | 0.607 (0.557) | 0.829 (0.628) |
+| logreg, disease | 0.599 (0.552) | 0.637 (0.601) | 0.839 (0.681) |
+| xgboost, disease | 0.652 (0.593) | 0.682 (0.631) | 0.858 (0.706) |
+| logreg, drug+disease | 0.605 (0.551) | 0.599 (0.562) | 0.791 (0.579) |
+| xgboost, drug+disease | 0.626 (0.588) | 0.660 (0.603) | 0.852 (0.665) |
+
+What this says, and does not say: the disease block carries more signal than the drug block in
+every phase, and adding drug to disease did not help (it hurt), probably because 2048 sparse bits
+overfit on this few trials. Phase III PR-AUC looks high only because 75% of its test trials are
+successes; its ROC-AUC (0.71) is the fairer read. These are single-seed, untuned numbers, so treat
+differences of a point or two as noise. Phase I has the smallest test set. The text block is not built
+yet, so there is no text number and no three-way ablation yet. Nothing here is comparable to HINT's
+published numbers (see "Not verified").
 
 **Done:** repo public with `main` protected (1 approving review required); dataset and roles
-decided; section 5 contract agreed, now including `split_valid.npy`; evaluation harness merged
-with a self-check (`python -m eval.test_harness`); baselines written and tested on fake data;
-raw TOP CSVs counted; leakage columns identified; Phase I decision made (report all three).
+decided; section 5 contract agreed, including `split_valid.npy`; evaluation harness with a self-check
+(`python -m eval.test_harness`); `pr_auc_hint` column; decision-analysis code (`eval/decision.py`);
+baselines (logreg, xgboost) written and run on the real arrays for drug, disease and drug+disease;
+features pipeline from Ananya (fingerprints and disease block ready); leakage columns identified;
+Phase I decision made (report all three).
 
-**Where we stopped (2026-11-09, end of Aditya's session):**
-- UPDATE 2026-11-10: PRs #3, #4 and #5 are merged (see the top of this section). The text below
-  this line about them being open is out of date.
-- Aditya's local checkout was on branch `aditya/baselines`. After #3 merges: `git checkout main`,
-  `git pull`, and if #4 shows conflicts, rebase `aditya/baselines` onto `main`.
+**Where we stopped (2026-11-10, Aditya's session):**
+- `main` is up to date and there are no open PRs except whatever is listed by `gh pr list`.
+- Still to do on the modelling side: text block (blocked on Ananya's GPU run), fusion MLP, ablation
+  over all three blocks, error analysis by disease area, decision analysis on real predictions.
 - Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
-  that session. It was blocked once already. Aditya can still choose to do it.
-- No activity from Ananya yet as of this update: no branches, reviews, or comments. We have not
-  verified that she has seen the invite or the PRs, nor that she agreed to `split_valid`.
-  Check `gh pr list` and `git branch -r` first.
-- `results/results.csv` does not exist yet. No real numbers have been produced.
+  that session. Aditya said so for PRs #3 to #7.
+- Ananya has not answered the two questions addressed to her in section 10, and has not yet reviewed
+  anything Aditya merged.
+- Windows bug found while building (2026-11-10): `python -m features.build fingerprints` crashes at the
+  end with `UnicodeEncodeError ... '⚠'` because the validation report is written without
+  `encoding="utf-8"`. Workaround that needs no code change: set `PYTHONUTF8=1` before running. The
+  proper fix is one line in `features/` (Ananya's folder), so it is hers to make.
 
 **Not verified, do not quote yet:**
 - HINT's published PR-AUC for OUR release. 0.57 / 0.65 / 0.81 has no source. The arXiv v3
@@ -324,9 +349,11 @@ raw TOP CSVs counted; leakage columns identified; Phase I decision made (report 
   record for the published HINT paper (35465223) reports F1 0.665 / 0.620 / 0.847 on 627 / 1,653 /
   1,140 trials, which matches our CSV sizes, so that is probably the right version to compare
   against. We could not retrieve its PR-AUC, so find it in the full text first.
-- The metric definition HINT uses: the paper only says "PR-AUC" with bootstrap error bars, no
-  formula. Not yet checked in the HINT code. sklearn's `average_precision_score` is the
-  step-wise version and may differ slightly.
+- HINT's metric definition (checked in `HINT/model.py`, `Interaction.evaluation`, through a fetch
+  summary, so confirm against the file before quoting): ROC-AUC uses raw probabilities, but PR-AUC is
+  `average_precision_score(label, predict)` called AFTER the predictions are cut to 0/1 at a fixed
+  0.5. That is not a threshold-free PR-AUC. Ours (`pr_auc`) scores raw probabilities, the standard
+  definition. `pr_auc_hint` in the results CSV mimics HINT. HINT's bootstrap defaults to 20 resamples.
 - XGBoost settings (200 trees, depth 4) are untuned defaults, so the baselines are a first floor.
 - Trial cost figures for the decision analysis: candidate sources are in section 10, none
   verified against the primary paper.
@@ -338,13 +365,14 @@ not block her working locally: clone the repo, use her own `gh` login, run Claud
 terminal. If she needs cloud sessions, the options are a fork under her own account (install the
 app there, PR back to `adigreat`) or moving the repo to a GitHub org both of us belong to.
 
-**Getting the raw data** (gitignored, ~40 MB, run from the repo root):
+**Getting the data and the arrays** (run from the repo root; `data/` is gitignored; on Windows set
+`PYTHONUTF8=1` first, see "Where we stopped"):
 
 ```
-mkdir -p data/raw && cd data/raw
-for p in I II III; do for s in train valid test; do
-  curl -fLO https://raw.githubusercontent.com/futianfan/clinical-trial-outcome-prediction/main/data/phase_${p}_${s}.csv
-done; done
+pip install -r requirements.txt -r features/requirements.txt
+python -m features.build fetch          # clones TOP at the pinned commit into data/raw/top/
+python -m features.build fingerprints
+python -m features.build disease
 ```
 
 **Next up, Person A (Ananya), in `features/`:** (2026-11-10: steps 1 to 4 are DONE in PR #6, merged.
@@ -359,12 +387,15 @@ with a GPU, then ship `text_features.npy`. The list below is the original plan.)
 5. Then ICD embeddings, then PubMedBERT text embeddings (2 rows have empty `criteria`).
 
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
-1. DONE: `models/baselines.py` (logreg + xgboost per phase), tested on fake arrays with
-   `python -m models.test_baselines`. Needs the real arrays to produce real numbers.
-2. When Ananya ships fingerprints: `python -m models.baselines --blocks drug`, then review the
-   first real rows in `results/results.csv`.
-3. Setup for a fresh clone: `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt`
-   (Windows; `.venv/bin/pip` elsewhere).
+1. DONE: `models/baselines.py` and the first real floor (table above).
+2. Fusion MLP (concatenate the ready blocks, small MLP head) once the text block exists. Needs a
+   PyTorch install, which is not in `requirements.txt` yet.
+3. Ablation: `--blocks` already covers drug, disease and drug+disease. Add text when it ships.
+4. Error analysis by disease area, then the decision analysis on real predictions with
+   `eval.decision.threshold_table` (costs are an open question, section 10).
+5. Answer Ananya's two questions in section 10.
+6. Setup for a fresh clone: `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt
+   -r features/requirements.txt` (Windows; `.venv/bin/pip` elsewhere).
 
 **Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
 the other person approves. Never push to `main`.
