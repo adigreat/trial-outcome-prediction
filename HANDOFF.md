@@ -99,9 +99,22 @@ without blocking each other.
 - Training loop and experiment runner
 - Results table
 
-### Shared
-Ablations, error analysis, and the decision-threshold work are split one each — see
-section 6. Neither person owns both.
+### Shared (redistributed 2026-11-10, see section 9)
+The original rule was "ablations, error analysis and decision analysis are split one each". Now that
+the features are finished, the remaining work is split like this:
+
+| Work | Owner | Files |
+|---|---|---|
+| Fusion model (MLP) | Aditya | `models/` |
+| Decision analysis | Aditya | `eval/decision.py`, `models/decision_run.py` |
+| Error analysis by disease area | Ananya | `models/error_analysis.py`, `models/test_error_analysis.py` |
+| Ablation table and multi-seed runs | Ananya | runs `models.baselines` (and the fusion CLI once it exists); rows go to `results/` |
+| HINT comparison numbers | Ananya | sections 8 and 13 of this file |
+| Fresh-clone test and `requirements.txt` | Ananya | repo root |
+| Final README | Ananya drafts, Aditya adds the fusion numbers | `README.md` |
+
+Ananya may edit the files listed against her name even though they sit under `models/`. Everything
+else in `eval/` and `models/` stays Aditya's.
 
 | Role | Who |
 |---|---|
@@ -249,6 +262,10 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-10 | Decision-analysis costs: money saved per correctly stopped trial = average per-study cost from the ERG report for HHS ASPE (Sertkaya et al., 2014): $3.80M / $13.35M / $19.89M for Phase 1 / 2 / 3 (US, Medidata contract data from 2004 on, not inflation-adjusted). Value lost per wrongly stopped success has no trusted source, so it is an assumption: 1x, 3x and 10x the trial cost, all reported. Kill threshold is chosen on valid and reported on test (`models/decision_run.py`) | Aditya |
 | 2026-11-10 | Error analysis by disease area = ICD-10 chapter letter from the disease block (`models/error_analysis.py`). Letter D mixes benign neoplasms and blood disorders | Aditya |
 | 2026-11-10 | Text block built on Aditya's machine (PubMedBERT, 1536 dims). All three blocks are ready, so the XGBoost ablation over all seven block combinations is logged in `results/results.csv` | Aditya |
+| 2026-11-10 | PR #8 approved by Ananya and merged normally (no admin merge) | Aditya |
+| 2026-11-10 | Work redistributed (table in section 4). Ananya takes: error analysis (she now owns `models/error_analysis.py` and its test), the ablation table and multi-seed runs, the HINT number hunt, the fresh-clone test with `requirements.txt`, and the README draft. Aditya keeps: fusion model, decision analysis. This replaces "neither person owns both" in section 4 | Aditya |
+| 2026-11-10 | Ananya's laptop has no CUDA GPU (Snapdragon X, Windows on ARM, 16 GB RAM), so she does not run PubMedBERT. Aditya sends her `text_features.npy` directly (not through git). Her zips were compared with Aditya's local build: drug, disease, labels, phase, splits and trial IDs are identical, so the row order matches | Aditya |
+| 2026-11-10 | The redistribution PR (docs only) is admin-merged on Aditya's explicit instruction, so that Ananya sees her new list straight away | Aditya |
 
 ---
 
@@ -296,8 +313,9 @@ where you left off.
 ## 13. Status and next up (update this every session)
 
 **Last updated:** 2026-11-10, by Aditya.
-PRs #3 to #7 are merged into `main`. #3 to #7 were admin-merged on Aditya's instruction, without a
-review from the other person. For #6 (Ananya's features pipeline), Aditya first merged `main`
+PRs #3 to #8 are merged into `main`. #3 to #7 were admin-merged on Aditya's instruction, without a
+review from the other person. #8 was approved by Ananya and merged normally. **The work was
+redistributed on 2026-11-10: see the table in section 4 and the two "Next up" lists below.** For #6 (Ananya's features pipeline), Aditya first merged `main`
 into `ananya/features-pipeline` and pushed it, keeping both sides' rows in `HANDOFF.md`; her code was
 not changed. Ananya: please look over what landed (`features/`, section 9) and say if anything is wrong.
 
@@ -355,8 +373,15 @@ Phase I decision made (report all three).
   all-zero text vector (no usable criteria).
 - Claude must not merge an unreviewed PR or use `gh pr merge --admin` unless Aditya says so in
   that session. Aditya said so for PRs #3 to #7.
-- Ananya has not yet reviewed anything Aditya merged. One question is open for her in section 10
-  (ICD chapter P / Z counts).
+- Ananya reviewed and approved PR #8, and said she will take the Windows UTF-8 fix and the ICD chapter
+  P / Z question in a separate PR. She has not commented on PRs #3 to #7.
+- Ananya's laptop: Snapdragon X (8 cores, Windows on ARM), 16 GB RAM, Adreno GPU, so no CUDA. Everything
+  except the PubMedBERT step runs on CPU there (XGBoost, the error analysis, and the small fusion MLP
+  once it exists). Not checked: whether `rdkit`, `xgboost` and `torch` install on Windows-on-ARM
+  Python. If one does not, use the x64 Python build, which runs under emulation. Her builds so far ran
+  in a Linux workspace, so her laptop is a real second environment for the fresh-clone test.
+- Ananya's two zips (fingerprints; fingerprints + disease) match Aditya's local build exactly. Neither
+  has the text block; it exists only on Aditya's machine until he sends her `text_features.npy`.
 - Windows bug found while building (2026-11-10): `python -m features.build fingerprints` crashes at the
   end with `UnicodeEncodeError ... '⚠'` because the validation report is written without
   `encoding="utf-8"`. Workaround that needs no code change: set `PYTHONUTF8=1` before running. The
@@ -398,21 +423,39 @@ pip install -r features/requirements-text.txt
 python -m features.build text           # PubMedBERT, about 25 min on a 6 GB GPU, resumable
 ```
 
-**Next up, Person A (Ananya), in `features/`:** all three blocks are built and the pipeline is merged.
-1. Fix the Windows `UnicodeEncodeError` (write the validation report with `encoding="utf-8"`).
+**Next up, Person A (Ananya).** Updated 2026-11-10 after the redistribution (section 4). None of this
+needs a GPU.
+1. Fix the Windows `UnicodeEncodeError` in `features/` (write the validation report with
+   `encoding="utf-8"`).
 2. Answer the ICD chapter P / Z question in section 10.
-3. Look over what was merged without your review (PRs #3 to #7) and what Aditya decided in section 9.
-4. Then pick up a shared workstream from section 6 (error analysis or decision analysis write-up).
+3. Error analysis is yours now (`models/error_analysis.py`, `models/test_error_analysis.py`):
+   a. split ICD letter D into benign neoplasms (D00 to D49) and blood disorders (D50 to D89);
+   b. rerun `python -m models.error_analysis` and update the paragraph in this section;
+   c. rerun it on the fusion model when Aditya has merged it, and write the result up for the README.
+4. Ablation table with several seeds: `python -m models.baselines --blocks <combo> --seed <n>` for the
+   seven block combinations and seeds 1 to 4 (seed 0 is logged). Report mean and spread per phase. Needs
+   `text_features.npy` from Aditya (put it in `data/processed/`, then check that
+   `load_contract("data/processed")` passes and `manifest.json` still describes the blocks). Do the same
+   with the fusion CLI once it exists.
+5. Find HINT's PR-AUC for our release: the full text of the published HINT paper (PubMed 35465223),
+   test sets of 627 / 1,653 / 1,140 trials. Record the numbers with the table or page they come from in
+   section 8, and close the open question in section 10. Also confirm the metric definition in
+   `HINT/model.py` (see "Not verified").
+6. Fresh-clone test on your laptop: clone, create the venv, install, run the build commands above and
+   the four self-checks. Fix what is missing in the root `requirements.txt` (`torch` is not listed) and
+   write down anything Windows-on-ARM specific.
+7. Draft the final README: the section 2 pitch, the dataset version, how to run, the results table,
+   the error analysis, limits. Leave marked gaps for the fusion numbers.
 
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
-1. DONE: baselines, seven-way block ablation with XGBoost, error analysis, decision analysis (above).
-2. Fusion MLP: concatenate the three blocks, small MLP head, tune on valid. PyTorch is installed in
-   the venv (cu124) but is not in the root `requirements.txt` yet.
-3. Rerun the ablation, error analysis and decision analysis on the fusion model, with several seeds.
-4. Find HINT's PR-AUC for our release (full text of the published paper) before any comparison.
-5. Final README with results and the dataset version.
-6. Setup for a fresh clone: `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt
-   -r features/requirements.txt` (Windows; `.venv/bin/pip` elsewhere).
+1. Send `text_features.npy` to Ananya directly (Drive or similar, never git). She is blocked on it for
+   item 4 of her list.
+2. Fusion MLP: concatenate the three blocks, small MLP head, tune on valid. Give it the same CLI shape
+   as `models.baselines` (`--blocks`, `--seed`) and log through `eval.harness.evaluate`, so Ananya can
+   run the ablation and the error analysis on it. PyTorch is installed in the venv (cu124).
+3. Rerun the decision analysis on the fusion model.
+4. Add the fusion numbers to Ananya's README draft.
+5. Review Ananya's PRs.
 
 **Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
 the other person approves. Never push to `main`.

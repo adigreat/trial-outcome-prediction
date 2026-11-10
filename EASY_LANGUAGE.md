@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-10 (all three feature blocks built, first ablation done).
+Written for Ananya and Aditya. Last updated: 2026-11-10 (all three feature blocks built, first ablation done, work re-split).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -42,8 +42,11 @@ the trial, so using them is cheating. We only use `smiless`, `icdcodes`/`disease
 
 | Person | Job | Folder |
 |---|---|---|
-| Ananya (A) | Turn the raw files into numbers (features) | `features/` |
-| Aditya (B) | Score models fairly and train baselines | `eval/`, `models/` |
+| Ananya (A) | Features (done). Now also: error analysis, the ablation runs with several seeds, finding HINT's numbers, the fresh-clone test, the README draft | `features/`, plus `models/error_analysis.py` and its test |
+| Aditya (B) | Scoring code, baselines, the fusion model, the decision analysis | `eval/`, `models/` |
+
+The work was re-split on 2026-11-10, because the features are finished and everything left was on
+Aditya's side.
 
 Stay in your own folder. It stops us from fighting over the same files.
 
@@ -77,8 +80,9 @@ Check before sending: `eval.harness.load_contract("data/processed")` must pass.
   eligibility text. Aditya ran the text step on his laptop GPU (about 25 minutes).
 - First real baselines for every combination of the three blocks.
 - A first error analysis by disease area and a first decision analysis.
-- Pull requests #3 to #7 are merged. Aditya merged them as admin because Ananya had not reviewed them
-  yet. Ananya, please look over what landed and say if anything is wrong.
+- Pull requests #3 to #8 are merged. Ananya reviewed and approved #8. #3 to #7 were merged by Aditya
+  as admin before she could review them.
+- Ananya's two zips were checked against Aditya's own build: the arrays are identical.
 
 **The numbers (test set, PR-AUC, XGBoost, higher is better)**
 
@@ -119,26 +123,37 @@ What it means in plain words:
 ## 7. Next steps, why, and how
 
 ### Ananya
-1. **Look at what was merged and what Aditya decided.**
-   *Why:* PRs #3 to #7 went in without your review, and your two questions were answered (keep the 106
-   trials; the disease multi-hot is fine as is).
-   *How:* read sections 9, 10 and 13 of `HANDOFF.md` and say if anything is wrong.
-2. **Fix the Windows crash in `features/`.**
-   *Why:* on Windows the build stops at the end with a `UnicodeEncodeError`. Aditya got around it with
-   `PYTHONUTF8=1`.
+Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
+1. **Fix the Windows crash in `features/`.**
+   *Why:* on Windows the build stops at the end with a `UnicodeEncodeError`.
    *How:* open the validation report file with `encoding="utf-8"`.
-3. **Check one odd count.** Many trials carry an ICD chapter P (perinatal) or Z code. Is that really in
+2. **Check one odd count.** Many trials carry an ICD chapter P (perinatal) or Z code. Is that really in
    the data, or a parsing slip? (`HANDOFF.md` section 10.)
-4. **Then pick a shared task:** writing up the error analysis or the decision analysis.
+3. **Error analysis is yours now.**
+   *Why:* it is built on the disease codes, which you know best.
+   *How:* in `models/error_analysis.py`, split ICD letter D into benign tumours (D00 to D49) and blood
+   disorders (D50 to D89), rerun it, and later rerun it on the fusion model.
+4. **Run the ablation with more seeds.**
+   *Why:* one seed is not enough to trust a difference of a point or two.
+   *How:* `python -m models.baselines --blocks <combo> --seed <n>`, seeds 1 to 4, all seven block
+   combinations. You need the text array first: Aditya will send you `text_features.npy`.
+5. **Find HINT's real PR-AUC for our dataset version.**
+   *Why:* we cannot compare with HINT until we have the right number.
+   *How:* read the full text of the published HINT paper and note the table it comes from.
+6. **Fresh-clone test on your laptop.**
+   *Why:* the project must run for someone who starts from nothing, and your laptop is a different kind
+   of machine from Aditya's.
+   *How:* clone, install, build, run the four checks, and fix `requirements.txt` where it falls short.
+7. **Draft the final README.** Leave gaps for the fusion model's numbers.
 
 ### Aditya
-1. **Fusion model:** join the three blocks and train a small neural network (MLP).
+1. **Send `text_features.npy` to Ananya** (Drive or similar, never git). She needs it for her step 4.
+2. **Fusion model:** join the three blocks and train a small neural network (MLP).
    *Why:* simple stacking did not beat the disease block alone, so we need a model that can combine them.
-   *How:* PyTorch is already installed in the project venv.
-2. **Redo the ablation, error analysis and decision analysis on the fusion model**, with several seeds.
-   *Why:* one seed is not enough to trust a difference of a point or two.
-3. **Find HINT's real PR-AUC for our dataset version** before comparing anything.
-4. **README:** add the results and the dataset version once the model is done.
+   *How:* PyTorch is already installed in the project venv. Give it the same command-line options as
+   the baselines so Ananya can run it too.
+3. **Redo the decision analysis on the fusion model.**
+4. **Add the fusion numbers to the README** and review Ananya's pull requests.
 
 ## 8. About the HINT comparison (be careful here)
 
