@@ -14,7 +14,7 @@ import numpy as np
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 from eval.harness import load_contract
-from models.baselines import MODELS
+from models.baselines import MODELS, fit, load_blocks
 
 OUT = Path(__file__).resolve().parent.parent / "results" / "error_analysis.csv"
 COLUMNS = ["date", "config", "phase", "area", "n", "pos_rate", "mean_pred", "pr_auc", "roc_auc",
@@ -66,7 +66,7 @@ def run(folder="data/processed", model="xgboost", blocks=("disease",), seed=0, p
     d = load_contract(folder)
     names = json.loads((folder / "feature_names" / "disease_features.json").read_text(encoding="utf-8"))
     groups = chapter_groups(d["disease_features"], names)
-    X = np.hstack([d[f"{b}_features"].reshape(len(d["labels"]), -1) for b in blocks])
+    X, dims = load_blocks(d, blocks)
     y, phase = d["labels"], d["phase"]
     cfg = json.dumps({"model": model, "blocks": list(blocks), "seed": seed, "split": "test"}, sort_keys=True)
     out = []
@@ -75,7 +75,8 @@ def run(folder="data/processed", model="xgboost", blocks=("disease",), seed=0, p
         te = d["split_test"][phase[d["split_test"]] == p]
         if len(te) == 0 or len(set(y[tr].tolist())) < 2:
             continue
-        score = MODELS[model](seed).fit(X[tr], y[tr]).predict_proba(X[te])[:, 1]
+        va = d["split_valid"][phase[d["split_valid"]] == p]
+        score = fit(model, seed, X, y, tr, va, dims).predict_proba(X[te])[:, 1]
         g = {"ALL": np.ones(len(te), dtype=bool), **{k: m[te] for k, m in groups.items()}}
         out += [{"date": date.today().isoformat(), "config": cfg, "phase": p, **r} for r in by_group(y[te], score, g)]
     path = Path(path)
@@ -91,7 +92,7 @@ def run(folder="data/processed", model="xgboost", blocks=("disease",), seed=0, p
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="xgboost", choices=list(MODELS))
+    ap.add_argument("--model", default="xgboost", choices=[*MODELS, "fusion"])
     ap.add_argument("--blocks", default="disease", help="comma list of drug,disease,text")
     ap.add_argument("--seed", type=int, default=0)
     a = ap.parse_args()
