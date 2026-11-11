@@ -293,6 +293,11 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-11 | Error analysis splits letter D at D50 using the `icd_category_D*` columns: "neoplasm in situ/benign (D00-D49)", "blood/immune (D50-D89)", and "D (unresolved)" for D codes outside the train vocabulary (15 test rows). Labels for P and Z are now "... (only code)", so old and new rows in `results/error_analysis.csv` cannot be confused | Ananya |
 | 2026-11-11 | HINT comparison: published Patterns 2022 Table 2 (section 8). ROC-AUC is the like-for-like metric; HINT's PR-AUC is compared only with `pr_auc_hint` | Ananya |
 | 2026-11-11 | Root `requirements.txt` gains `torch` (CPU is enough): `models.test_baselines` imports the fusion model, so a fresh clone could not pass the four checks without it | Ananya |
+| 2026-11-11 | Aditya ran the two items Ananya was blocked on for lack of `text_features.npy`: logreg and XGBoost seeds 1 to 4 for text, drug+text, disease+text and drug+disease+text (192 rows), and the fusion error analysis with the D split and P/Z rule. Every model and block combination now has 5 seeds | Aditya |
+| 2026-11-11 | Spreads in the README are sample standard deviations (n - 1) everywhere, to match the HINT table. The fusion table in section 13 was written with the population formula, so a few of its spreads are 0.001 smaller | Aditya |
+| 2026-11-11 | HINT's Table 2 numbers and its metric code were checked a second time by Aditya's Claude: the paper's full text from Europe PMC (PMC9024011) and `HINT/model.py` at commit `8dc0497`. Both agree with section 8 | Aditya |
+| 2026-11-11 | Answer to Ananya: the P/Z side-effect codes stay in the disease features, as TOP gives them. Removing them would mean a new disease block and rerunning every result, for codes the models can learn to ignore. The README limits section already says we document this and do not fix it | Aditya |
+| 2026-11-11 | Ananya's PR #11 approved by Aditya (reviewed at commit `b27769d`) and merged normally (no admin merge) | Aditya |
 
 ---
 
@@ -308,7 +313,7 @@ Append here. Newest at the bottom. One line each.
 - [x] (Aditya) 106 trials in train for one phase and valid for another: keep them (section 9, 2026-11-10).
 - [x] (Aditya) Disease block as a multi-hot: fine as is (section 9, 2026-11-10).
 - [x] (Ananya) ICD chapter P / Z counts: real in TOP, side effects of its disease-name matching, not our parsing (section 9, 2026-11-11).
-- [ ] (Aditya) Do you want the P/Z side-effect codes removed from the disease *features* too (a features change, so a new block and new runs), or left as TOP gives them? Ananya's default: leave them; the model can learn they carry little.
+- [x] (Aditya) P/Z side-effect codes in the disease *features*: keep them, as TOP gives them (section 9, 2026-11-11). No rebuild, no new runs.
 - [x] Fingerprints shipped 2026-11-10: `python -m features.build fingerprints`, see `features/README.md`. Disease block also ready; text pending a GPU run on Ananya's machine
 
 ---
@@ -340,9 +345,9 @@ where you left off.
 
 ## 13. Status and next up (update this every session)
 
-**Last updated:** 2026-11-11, by Ananya (with Claude). Ananya's session is summarised under "Where we
-stopped (2026-11-11)"; the rest of this section is still Aditya's from 2026-11-10 unless marked.
-PRs #3 to #10 are merged into `main` (#9 and #10 on 2026-11-10/11; #10 approved by Ananya). #3 to #7 were admin-merged on Aditya's instruction, without a
+**Last updated:** 2026-11-11, by Aditya (with Claude), after Ananya's session the same day. Both
+sessions are summarised under "Where we stopped (2026-11-11)".
+PRs #3 to #11 are merged into `main` (#9 and #10 on 2026-11-10/11; #10 approved by Ananya; #11 approved by Aditya, merged 2026-11-11). #3 to #7 were admin-merged on Aditya's instruction, without a
 review from the other person. #8 was approved by Ananya and merged normally. **The work was
 redistributed on 2026-11-10: see the table in section 4 and the two "Next up" lists below.**
 The fusion model is built, run and merged (PR #10). For #6 (Ananya's features pipeline), Aditya's Claude first merged `main`
@@ -420,9 +425,13 @@ every phase. At 10x it stops almost nothing. Not good enough to stop trials on.
 ± SD (ROC-AUC): drug 0.610 ± 0.008 / 0.607 ± 0.003 / 0.829 ± 0.001; disease 0.650 ± 0.004 (0.591) /
 0.680 ± 0.003 (0.630) / 0.858 ± 0.001 (0.704); drug+disease 0.628 ± 0.002 / 0.654 ± 0.006 / 0.853 ±
 0.002. XGBoost barely moves with the seed, so the one-seed rows above were fair. Fusion all three beats
-XGBoost disease by 0.025 / 0.013 / 0.024 PR-AUC, more than either model's seed spread. The four
-combinations with text still have one XGBoost seed (waiting for `text_features.npy`). Re-running seed 0
+XGBoost disease by 0.025 / 0.013 / 0.024 PR-AUC, more than either model's seed spread. Re-running seed 0
 here gave PR-AUC within 0.004 of Aditya's rows (different xgboost build).
+Added by Aditya the same day, on his machine (seeds 1 to 4, 192 rows): text 0.634 ± 0.011 (0.596) /
+0.672 ± 0.009 (0.625) / 0.846 ± 0.007 (0.672); drug+text 0.635 ± 0.009 / 0.671 ± 0.011 / 0.846 ± 0.004;
+disease+text 0.641 ± 0.015 / 0.671 ± 0.008 / 0.839 ± 0.004; drug+disease+text 0.643 ± 0.018 (0.604) /
+0.668 ± 0.009 (0.624) / 0.843 ± 0.005 (0.669). So with 5 seeds everywhere, XGBoost's best row is still
+disease alone, and fusion all three beats XGBoost all three by 0.032 / 0.025 / 0.039 PR-AUC.
 
 **Comparison with HINT (2026-11-11, Ananya; numbers in section 8).** ROC-AUC, fusion all three (5
 seeds) against HINT (30 seeds): 0.627 vs 0.576 / 0.644 vs 0.645 / 0.726 vs 0.723. Our `pr_auc_hint`
@@ -435,6 +444,10 @@ cancer: 156 / 387 / 118 test trials, 81-90% of them also carry a cancer code, su
 Phase II and 0.61 in Phase III, and the model under-predicts them in Phase III (mean prediction 0.33).
 Blood / immune (D50-D89) is small: 19 / 58 / 40 trials. With the P/Z rule, "perinatal (only code)" has
 3 / 4 / 2 trials and "health-status factors (only code)" 37 / 26 / 21, so neither is a real area.
+Fusion rerun with the same rules (Aditya, 2026-11-11, all three blocks, seed 0; the ALL and cancer
+rows are identical to the 2026-11-10 run): D00-D49 has ROC-AUC 0.56 / 0.60 / 0.47, and in Phase III the
+model predicts 0.42 where 61% succeed. Blood / immune: 0.63 in Phase II (58 trials) and 0.58 in
+Phase III (40 trials); Phase I is too small to score.
 
 The paragraphs below describe the XGBoost runs from 2026-11-10 (before the D split).
 
@@ -472,6 +485,20 @@ Phase I decision made (report all three).
 - Fresh-clone test done on a clean Linux clone (see "Fresh-clone test" below; not an empty venv). Still to do on Ananya's
   Windows-on-ARM laptop.
 - `text_features.npy` has not arrived yet.
+
+**Where we stopped (2026-11-11, Aditya's session, after Ananya's):**
+- Reviewed Ananya's PR (UTF-8 fix, error analysis, XGBoost seeds, HINT numbers, README draft): all four
+  self-checks print `ok` and `pytest features/tests` gives 39 passed on Windows 11 without `PYTHONUTF8`.
+  HINT's numbers and metric code checked independently (section 9).
+- Ran what Ananya was blocked on (section 9): XGBoost and logreg seeds 1 to 4 for the four text
+  combinations, and the fusion error analysis with the new rules. `results/results.csv` now has 630
+  rows with no duplicates.
+- README: both `TODO(Aditya)` notes filled, results table completed, error-analysis and
+  decision-analysis sections updated, spreads made consistent.
+- The section 10 question about P/Z codes in the disease features is answered: keep them (section 9).
+  Section 10 has no open questions left.
+- Ananya no longer needs `text_features.npy` for any run. She needs it only if she wants the text
+  block in her laptop fresh-clone test without a multi-hour CPU build.
 
 **Fresh-clone test (2026-11-11, Ananya, Linux workspace, Python 3.13):**
 - Clean clone of this branch with no `data/`: `features.build fetch`, `fingerprints` and `disease` took 11
@@ -548,24 +575,22 @@ python -m features.build text           # PubMedBERT, about 25 min on a 6 GB GPU
 **Next up, Person A (Ananya).** Updated 2026-11-11. None of this needs a GPU.
 1. DONE 2026-11-11: Windows UTF-8 fix; ICD P / Z answer; error-analysis D split and P/Z rule; HINT
    numbers; README draft; fresh-clone test in Linux; XGBoost seeds 1 to 4 for the combinations without text.
-2. When `text_features.npy` arrives: put it in `data/processed/`, check `load_contract("data/processed")`
-   passes and update `manifest.json` (`blocks.text_features.status` to `ready`, dim 1536), then:
-   a. XGBoost seeds 1 to 4 for drug+text, disease+text, text, drug+disease+text
-      (`python -m models.baselines --blocks <combo> --seed <n>`), and fill those rows in the README table;
-   b. `python -m models.error_analysis --model fusion --blocks drug,disease,text` (D split and P/Z rule),
-      and update the README error-analysis section and the paragraph in this section.
+2. DONE by Aditya 2026-11-11 (he has the text array): XGBoost seeds 1 to 4 for the text combinations
+   and the fusion error analysis with the D split and P/Z rule. Check his wording of your
+   error-analysis section in the README.
 3. Fresh-clone test on the Windows-on-ARM laptop: same steps as the Linux run above, plus an empty-venv `pip install`. Write down whether
    `rdkit`, `xgboost` and `torch` install on ARM Python, or whether the x64 build under emulation is needed.
-4. Finish the README with Aditya's `TODO(Aditya)` parts once he has filled them.
+   The text step can be skipped there (the build writes a placeholder), or use `text_features.npy`
+   from Aditya if it has arrived.
+4. Finish the README: Aditya's parts are filled (2026-11-11). Remove the DRAFT comment when you are happy with it.
 
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
-1. Send `text_features.npy` to Ananya directly (Drive or similar, never git). She is still blocked on it
-   for item 2 of her list (2026-11-11).
-2. DONE: fusion MLP, 5-seed ablation, error analysis and decision analysis on it (above).
-3. README draft is in (2026-11-11). The fusion numbers are already in its results table; fill the two
-   `TODO(Aditya)` comments (why fusion combines blocks; check the decision-analysis paragraph).
-4. Answer the new section 10 question (keep or drop the P/Z side-effect codes in the disease features).
-5. Review Ananya's PR (UTF-8 fix, error analysis, XGBoost seeds, HINT numbers, README draft).
+1. DONE 2026-11-11: section 10 question answered (the P/Z codes stay in the disease features).
+2. Optional: send `text_features.npy` to Ananya directly (Drive or similar, never git) for her laptop
+   test. No run is blocked on it any more.
+3. DONE: fusion MLP with ablation, error and decision analysis; README parts; review of Ananya's PR.
+4. Review whatever Ananya changes in the README, then the project is at its definition of done except
+   for the laptop fresh-clone test.
 
 **Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
 the other person approves. Never push to `main`.
