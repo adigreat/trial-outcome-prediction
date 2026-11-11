@@ -11,6 +11,7 @@ import ast
 import hashlib
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -41,13 +42,42 @@ def file_sha256(path):
     return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
+RAW_URL = "https://raw.githubusercontent.com/futianfan/clinical-trial-outcome-prediction/{commit}/data/{name}"
+
+
+def _download(url, dest, timeout=300):
+    """Download url to dest atomically (a half-written file never looks finished)."""
+    import urllib.request
+    tmp = Path(str(dest) + ".part")
+    req = urllib.request.Request(url, headers={"User-Agent": "trial-outcome-prediction/features"})
+    with urllib.request.urlopen(req, timeout=timeout) as r, open(tmp, "wb") as f:
+        shutil.copyfileobj(r, f)
+    os.replace(tmp, dest)
+
+
 def fetch_raw(raw_dir=C.RAW_DIR, commit=C.UPSTREAM_COMMIT):
-    """Clone the upstream TOP repo at the pinned commit and copy the 9 phase CSVs into raw_dir."""
+    """Put the 9 TOP phase CSVs at the pinned commit into raw_dir.
+
+    Downloads the 9 files over HTTPS (about 40 MB, no git needed; git is not installed on every
+    machine, e.g. a fresh Windows laptop). Falls back to a git clone only if the download fails and
+    git exists. Either way, verify_raw() checks every file against its pinned hash afterwards.
+    """
     raw_dir = Path(raw_dir)
     if all((raw_dir / f).exists() for f in C.CSV_SHA256):
         log.info("raw CSVs already present in %s", raw_dir)
         return raw_dir
     raw_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        for f in C.CSV_SHA256:
+            if not (raw_dir / f).exists():
+                log.info("downloading %s @ %s", f, commit[:7])
+                _download(RAW_URL.format(commit=commit, name=f), raw_dir / f)
+        return raw_dir
+    except OSError as e:          # URLError and HTTPError are OSErrors
+        if shutil.which("git") is None:
+            raise DataError(f"could not download the TOP CSVs ({e}) and git is not installed. Download the 9 "
+                            f"phase_*.csv files from {C.UPSTREAM_REPO}/tree/{commit}/data into {raw_dir}") from e
+        log.warning("download failed (%s); trying git clone instead", e)
     with tempfile.TemporaryDirectory() as tmp:
         log.info("cloning %s @ %s", C.UPSTREAM_REPO, commit[:7])
         subprocess.run(["git", "clone", "--quiet", C.UPSTREAM_REPO, tmp], check=True)

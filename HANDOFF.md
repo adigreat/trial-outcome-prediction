@@ -564,7 +564,7 @@ longer needed once the 2026-11-11 UTF-8 fix is merged):
 
 ```
 pip install -r requirements.txt -r features/requirements.txt
-python -m features.build fetch          # clones TOP at the pinned commit into data/raw/top/
+python -m features.build fetch          # downloads the 9 TOP CSVs at the pinned commit (no git needed)
 python -m features.build fingerprints
 python -m features.build disease
 pip install torch --index-url https://download.pytorch.org/whl/cu124   # pick the build for your CUDA
