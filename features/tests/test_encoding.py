@@ -4,6 +4,7 @@ and on Windows a text write without encoding= uses cp1252 and raises UnicodeEnco
 Python's EncodingWarning flags every text open that relies on the platform default, so running the
 whole pipeline with that warning turned into an error catches the bug on any OS.
 """
+import os
 import subprocess
 import sys
 
@@ -39,7 +40,10 @@ print("ok")
 
 
 def test_pipeline_never_relies_on_platform_default_encoding(tmp_path):
+    # PYTHONIOENCODING only sets the child's stdout/stderr (so we can read them on Windows, where a
+    # piped child otherwise writes cp1252); it does not change open()'s default, which is what we test.
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
     r = subprocess.run([sys.executable, "-X", "warn_default_encoding", "-W", "error::EncodingWarning",
                         "-c", SCRIPT, str(tmp_path)], cwd=C.REPO_ROOT, capture_output=True, text=True,
-                       encoding="utf-8")
+                       encoding="utf-8", errors="replace", env=env)
     assert r.returncode == 0 and r.stdout.strip().endswith("ok"), r.stderr[-3000:]

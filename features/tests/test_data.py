@@ -95,3 +95,38 @@ def test_table_hash_sensitive_to_label_and_order(small_master):
     m2.loc[0, "label"] = 1 - m2.loc[0, "label"]
     assert table_hash(m2) != h
     assert table_hash(m.iloc[::-1]) != h
+
+
+def test_fetch_downloads_without_git(tmp_path, monkeypatch):
+    """`features.build fetch` must work on a machine with no git (found on Ananya's Windows laptop)."""
+    import io
+    import urllib.request
+    from features import config as C
+    from features import data as D
+    calls = []
+
+    def fake_urlopen(req, timeout=None):
+        calls.append(req.full_url)
+        return io.BytesIO(b"nctid,label\n")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(D.shutil, "which", lambda name: None)
+    monkeypatch.setattr(D.subprocess, "run", lambda *a, **k: pytest.fail("git must not be called"))
+    D.fetch_raw(tmp_path)
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(C.CSV_SHA256)
+    assert all(C.UPSTREAM_COMMIT in u and u.startswith("https://raw.githubusercontent.com/") for u in calls)
+    assert not list(tmp_path.glob("*.part"))
+
+
+def test_fetch_without_network_or_git_says_what_to_do(tmp_path, monkeypatch):
+    import urllib.error
+    import urllib.request
+    from features import data as D
+
+    def boom(req, timeout=None):
+        raise urllib.error.URLError("offline")
+
+    monkeypatch.setattr(urllib.request, "urlopen", boom)
+    monkeypatch.setattr(D.shutil, "which", lambda name: None)
+    with pytest.raises(DataError, match="git is not installed"):
+        D.fetch_raw(tmp_path)

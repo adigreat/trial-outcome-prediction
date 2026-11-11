@@ -298,6 +298,9 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-11 | HINT's Table 2 numbers and its metric code were checked a second time by Aditya: the paper's full text from Europe PMC (PMC9024011) and `HINT/model.py` at commit `8dc0497`. Both agree with section 8 | Aditya |
 | 2026-11-11 | Answer to Ananya: the P/Z side-effect codes stay in the disease features, as TOP gives them. Removing them would mean a new disease block and rerunning every result, for codes the models can learn to ignore. The README limits section already says we document this and do not fix it | Aditya |
 | 2026-11-11 | Ananya's PR #11 approved by Aditya (reviewed at commit `b27769d`) and merged normally (no admin merge) | Aditya |
+| 2026-11-11 | PR #12 (text-combination seeds, fusion error analysis with the D split, README parts) approved by Ananya after re-computing the README table from `results/results.csv` | Ananya |
+| 2026-11-11 | `features.build fetch` downloads the 9 TOP CSVs over HTTPS from raw.githubusercontent.com at the pinned commit (about 40 MB) instead of cloning the whole upstream repo. git is only a fallback. Found because Ananya's laptop has no git | Ananya |
+| 2026-11-11 | Fresh-clone test on Windows on ARM passed with x64 Python 3.14 under emulation (section 13). `features/tests/test_encoding.py` now sets `PYTHONIOENCODING` for its child process so its output can be read on Windows; this does not weaken what it tests | Ananya |
 
 ---
 
@@ -345,9 +348,10 @@ where you left off.
 
 ## 13. Status and next up (update this every session)
 
-**Last updated:** 2026-11-11, by Aditya, after Ananya's session the same day. Both
-sessions are summarised under "Where we stopped (2026-11-11)".
-PRs #3 to #11 are merged into `main` (#9 and #10 on 2026-11-10/11; #10 approved by Ananya; #11 approved by Aditya, merged 2026-11-11). #3 to #7 were admin-merged on Aditya's instruction, without a
+**Last updated:** 2026-11-11 evening, by Ananya: PR #12 approved, Windows fresh-clone test
+done (see "Fresh-clone test on Ananya's laptop"). Earlier the same day: Ananya's and Aditya's sessions,
+summarised under "Where we stopped (2026-11-11)".
+PRs #3 to #12 are merged into `main` (#9 and #10 on 2026-11-10/11; #10 approved by Ananya; #11 approved by Aditya; #12 approved by Ananya; all merged 2026-11-11). #3 to #7 were admin-merged on Aditya's instruction, without a
 review from the other person. #8 was approved by Ananya and merged normally. **The work was
 redistributed on 2026-11-10: see the table in section 4 and the two "Next up" lists below.**
 The fusion model is built, run and merged (PR #10). For #6 (Ananya's features pipeline), Aditya first merged `main`
@@ -500,6 +504,34 @@ Phase I decision made (report all three).
 - Ananya no longer needs `text_features.npy` for any run. She needs it only if she wants the text
   block in her laptop fresh-clone test without a multi-hour CPU build.
 
+**Fresh-clone test on Ananya's laptop (2026-11-11 evening, Ananya, native Windows):**
+- Machine: Snapdragon X (Windows 11 on ARM, build 26200). The only Python installed is 3.14.8 **x64**
+  (`py -0p` lists just that one), so everything ran under Windows' x64 emulation; an ARM-native
+  Python was not tried. **No git** on the laptop, so the repo was downloaded as a zip of `main` at
+  `7cb3305` (PRs #11 and #12 merged).
+- Empty venv, `pip install -r requirements.txt -r features/requirements.txt`: worked first time, about
+  4 minutes. pip found `win_amd64` wheels for everything (numpy 2.5.4, pandas 3.1.1, scikit-learn 1.9.1,
+  xgboost 3.4.1, torch 2.15.0, rdkit 2026.9.1, pytest 9.2.0). Nothing needed compiling.
+- `features.build fetch` **failed**: it called `git clone` and git is not installed
+  (`FileNotFoundError: [WinError 2]`). Fixed in `features/data.py` (section 9): fetch now downloads the 9
+  CSVs over HTTPS and only falls back to git. For this run the 9 CSVs were downloaded the same way by
+  hand; they passed the pinned hash check, and the master-table hash (`2ee85212d682`) is the same as
+  on Linux, so the data is identical.
+- `fingerprints` (43 s with the master table) and `disease` (5 s) worked. `load_contract` passes
+  (2048 / 1983 / text placeholder).
+- Checks: `eval.test_decision`, `models.test_baselines`, `models.test_error_analysis` print `ok`.
+  `eval.test_harness` failed once with `ImportError: DLL load failed ... An Application Control policy
+  has blocked this file` (Windows Smart App Control blocked a scikit-learn DLL the first time it was
+  loaded), then passed three times in a row on rerun. If you see that error on a fresh install, run
+  the command again. `pytest features/tests`: 38 passed, 1 skipped (the tiny-BERT test, because
+  `transformers` is only in `requirements-text.txt`). It also raised a decode warning in the encoding
+  test's subprocess on Windows, now fixed (section 9).
+- One real run (drug+disease, seed 0, test PR-AUC): XGBoost 0.626 / 0.660 / 0.852, identical to
+  Aditya's seed-0 rows. Fusion 0.618 / 0.679 / 0.870 (Linux CPU 0.618 / 0.670 / 0.870, Aditya's GPU
+  0.634 / 0.679 / 0.871), so fusion moves in the second or third decimal across machines, as noted.
+- The text block was not built on the laptop (no GPU, and `text_features.npy` was not needed).
+- Test folder: `Documents\trial-fresh-clone-test` on the laptop (scripts, logs, the downloaded repo).
+
 **Fresh-clone test (2026-11-11, Ananya, Linux workspace, Python 3.13):**
 - Clean clone of this branch with no `data/`: `features.build fetch`, `fingerprints` and `disease` took 11
   seconds in total. `load_contract` passes, all four self-checks print `ok`, `pytest features/tests` gives
@@ -512,9 +544,7 @@ Phase I decision made (report all three).
   (on Linux, `xgboost` pulls in the ~300 MB `nvidia-nccl` wheel, then `torch` is larger still), so the
   checks above ran on the workspace's own Python with the same packages. The empty-venv install is part
   of the Windows-on-ARM laptop test.
-- For the laptop (not checked yet): if `pip install torch`, `rdkit` or `xgboost` finds no wheel for
-  Windows-on-ARM Python, use the x64 Python build, which runs under emulation (see the note further down).
-  Write down which one was needed.
+- Laptop result: see "Fresh-clone test on Ananya's laptop" above (x64 Python under emulation worked).
 
 **Where we stopped (2026-11-10, Aditya's session):**
 - `main` is up to date and there are no open PRs except whatever is listed by `gh pr list`.
@@ -535,8 +565,8 @@ Phase I decision made (report all three).
   P / Z question in a separate PR. She has not commented on PRs #3 to #7.
 - Ananya's laptop: Snapdragon X (8 cores, Windows on ARM), 16 GB RAM, Adreno GPU, so no CUDA. Everything
   except the PubMedBERT step runs on CPU there (XGBoost, the error analysis, and the small fusion MLP
-  once it exists). Not checked: whether `rdkit`, `xgboost` and `torch` install on Windows-on-ARM
-  Python. If one does not, use the x64 Python build, which runs under emulation. Her builds so far ran
+  once it exists). Checked 2026-11-11: with x64 Python 3.14 (emulated) everything installs from wheels;
+  ARM-native Python was not tried. Her builds so far ran
   in a Linux workspace, so her laptop is a real second environment for the fresh-clone test.
 - Ananya's two zips (fingerprints; fingerprints + disease) match Aditya's local build exactly. Neither
   has the text block; it exists only on Aditya's machine until he sends her `text_features.npy`.
@@ -564,7 +594,7 @@ longer needed once the 2026-11-11 UTF-8 fix is merged):
 
 ```
 pip install -r requirements.txt -r features/requirements.txt
-python -m features.build fetch          # clones TOP at the pinned commit into data/raw/top/
+python -m features.build fetch          # downloads the 9 TOP CSVs at the pinned commit (no git needed)
 python -m features.build fingerprints
 python -m features.build disease
 pip install torch --index-url https://download.pytorch.org/whl/cu124   # pick the build for your CUDA
@@ -578,10 +608,8 @@ python -m features.build text           # PubMedBERT, about 25 min on a 6 GB GPU
 2. DONE by Aditya 2026-11-11 (he has the text array): XGBoost seeds 1 to 4 for the text combinations
    and the fusion error analysis with the D split and P/Z rule. Check his wording of your
    error-analysis section in the README.
-3. Fresh-clone test on the Windows-on-ARM laptop: same steps as the Linux run above, plus an empty-venv `pip install`. Write down whether
-   `rdkit`, `xgboost` and `torch` install on ARM Python, or whether the x64 build under emulation is needed.
-   The text step can be skipped there (the build writes a placeholder), or use `text_features.npy`
-   from Aditya if it has arrived.
+3. DONE 2026-11-11 evening: fresh-clone test on the Windows-on-ARM laptop (results above). It found that
+   `fetch` needed git; fixed in the PR after #12. Optional: try an ARM-native Python 3.14 one day.
 4. Finish the README: Aditya's parts are filled (2026-11-11). Remove the DRAFT comment when you are happy with it.
 
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
@@ -589,8 +617,9 @@ python -m features.build text           # PubMedBERT, about 25 min on a 6 GB GPU
 2. Optional: send `text_features.npy` to Ananya directly (Drive or similar, never git) for her laptop
    test. No run is blocked on it any more.
 3. DONE: fusion MLP with ablation, error and decision analysis; README parts; review of Ananya's PR.
-4. Review whatever Ananya changes in the README, then the project is at its definition of done except
-   for the laptop fresh-clone test.
+4. Review whatever Ananya changes in the README, then the project is at its definition of done. The
+   laptop fresh-clone test is done (2026-11-11 evening).
+5. Review Ananya's PR "fetch without git" (features/data.py, docs).
 
 **Branches and PRs:** one branch per task (`ananya/...`, `aditya/...`), merge through a PR that
 the other person approves. Never push to `main`.

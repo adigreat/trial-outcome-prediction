@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-11 (HINT numbers found, Windows fix, all runs have 5 seeds, README nearly done).
+Written for Ananya and Aditya. Last updated: 2026-11-11 evening (fresh-clone test on Ananya's Windows laptop done, `fetch` no longer needs git).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -175,8 +175,18 @@ What the fusion model tells us:
   model (0.68 / 0.69 / 0.88) is ahead by about 0.03 to 0.04.
 - The README is filled in: Aditya's two gaps are written, and the tables are complete.
 
+**New on 2026-11-11 evening (Ananya)**
+- Aditya's pull request #12 was checked (the README numbers were recomputed from the results file) and
+  approved.
+- **The fresh-clone test on Ananya's laptop is done.** A brand-new copy of the project was installed and
+  run on her Windows-on-ARM laptop. Everything installed on the first try (about 4 minutes), the data
+  came out identical to the Linux build, and the checks pass.
+- It found one real problem: getting the data needed **git**, which her laptop does not have. Now the
+  data is downloaded directly, so git is no longer needed.
+- One check failed once because Windows' security feature (Smart App Control) paused a new file the
+  first time. Running it again worked. The README now says so.
+
 **Not done yet**
-- The fresh-clone test on Ananya's Windows laptop.
 - A last read of the README by Ananya.
 
 ## 7. Next steps, why, and how
@@ -187,10 +197,8 @@ Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
    Linux, more XGBoost runs without text.
 2. **Done by Aditya:** the XGBoost runs with text and the fusion error analysis. Please check how he
    worded your error-analysis section in the README.
-3. **Fresh-clone test on your laptop.**
-   *Why:* Windows on ARM is a different kind of machine, and nobody has tried a clean install there.
-   *How:* clone, make a venv, `pip install -r requirements.txt -r features/requirements.txt`, build,
-   run the checks. If a package will not install, try the x64 Python build. Write down what happened.
+3. **Done 2026-11-11 evening: fresh-clone test on your laptop.** It passed with the x64 Python you have
+   installed. It found that `fetch` needed git; that is fixed in your newest pull request.
 4. **Finish the README.** Aditya's parts are filled. Remove the DRAFT note when you are happy.
 
 ### Aditya
@@ -199,6 +207,7 @@ Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
 2. **Optional: send `text_features.npy` to Ananya** (Drive or similar, never git). No run needs it any
    more; it only saves her a long build on her laptop.
 3. **Done:** the fusion model and its analyses, the README gaps, and the review of Ananya's pull request.
+4. **Review Ananya's "fetch without git" pull request.**
 
 ## 8. About the HINT comparison (be careful here)
 
