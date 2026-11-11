@@ -197,3 +197,74 @@ date,config,phase,area,n,pos_rate,mean_pred,pr_auc,roc_auc,accuracy_at_0.5,wrong
 2026-11-10,"{""blocks"": [""drug"", ""disease"", ""text""], ""model"": ""fusion"", ""seed"": 0, ""split"": ""test""}",3,injury/poisoning,15,0.5333,0.5492,,,0.6667,2,3
 2026-11-10,"{""blocks"": [""drug"", ""disease"", ""text""], ""model"": ""fusion"", ""seed"": 0, ""split"": ""test""}",3,injury,10,0.7,0.4982,,,0.5,4,1
 2026-11-10,"{""blocks"": [""drug"", ""disease"", ""text""], ""model"": ""fusion"", ""seed"": 0, ""split"": ""test""}",3,external causes,6,0.6667,0.5679,,,0.8333,0,1
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,ALL,627,0.5534,0.5687,0.6505,0.5886,0.5598,97,179
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,cancer,271,0.4391,0.4891,0.4465,0.4979,0.4945,60,77
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,neoplasm in situ/benign (D00-D49),156,0.4359,0.4314,0.494,0.5323,0.5577,44,25
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,nervous system,71,0.662,0.5299,0.7431,0.5718,0.4789,23,14
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,digestive,70,0.6,0.5319,0.7375,0.6488,0.6143,14,13
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,endocrine/metabolic,56,0.7857,0.6909,0.8107,0.535,0.6964,7,10
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,respiratory,50,0.6,0.574,0.7736,0.6842,0.62,9,10
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,infectious,47,0.6596,0.638,0.8054,0.6865,0.6809,6,9
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,injury,44,0.3409,0.6138,0.4123,0.5333,0.4318,1,24
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,mental,42,0.5238,0.5277,0.6415,0.6045,0.5476,7,12
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,genitourinary,42,0.5714,0.5077,0.7506,0.6655,0.5952,10,7
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,eye/ear,38,0.6579,0.679,0.8236,0.6969,0.6053,4,11
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,health-status factors (only code),37,0.6216,0.6356,0.73,0.6832,0.6216,0,14
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,symptoms,33,0.4848,0.5444,0.6226,0.6268,0.5758,7,7
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,musculoskeletal,32,0.5938,0.6446,0.6934,0.4615,0.5938,1,12
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,pregnancy,31,0.5806,0.6998,0.5673,0.4551,0.5161,3,12
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,circulatory,30,0.5667,0.6405,0.7484,0.6176,0.5,4,11
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,skin,23,0.7391,0.6117,,,0.6957,1,6
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,blood/immune (D50-D89),19,0.5263,0.3307,,,0.5789,8,0
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,injury/poisoning,17,0.4706,0.5592,,,0.5294,3,5
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,congenital,15,0.4667,0.6275,,,0.4,1,8
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,external causes,4,0.5,0.6547,,,0.5,0,2
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",1,perinatal (only code),3,0.3333,0.5683,,,0.3333,0,2
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,ALL,1654,0.555,0.5044,0.679,0.6281,0.5883,418,263
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,cancer,593,0.4587,0.3708,0.5213,0.5561,0.5683,223,33
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,neoplasm in situ/benign (D00-D49),387,0.4083,0.3256,0.4325,0.5222,0.5866,155,5
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,endocrine/metabolic,182,0.6648,0.6705,0.7685,0.6501,0.6978,9,46
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,digestive,181,0.6077,0.5505,0.7915,0.6859,0.6188,40,29
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,infectious,176,0.5909,0.6239,0.7655,0.6796,0.6534,14,47
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,nervous system,168,0.5357,0.5209,0.6315,0.5986,0.5476,39,37
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,respiratory,114,0.5702,0.5807,0.6274,0.6099,0.6228,10,33
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,genitourinary,107,0.5607,0.4952,0.7071,0.6532,0.6075,24,18
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,circulatory,105,0.5429,0.561,0.6211,0.5283,0.4952,19,34
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,eye/ear,94,0.5957,0.6296,0.7606,0.6955,0.6702,5,26
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,mental,93,0.5269,0.444,0.5644,0.5179,0.4731,37,12
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,musculoskeletal,89,0.6517,0.5635,0.6171,0.4686,0.6404,9,23
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,pregnancy,80,0.6,0.6317,0.5874,0.4587,0.55,10,26
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,skin,79,0.6709,0.6878,0.7556,0.623,0.6962,3,21
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,symptoms,73,0.4795,0.4902,0.5946,0.6481,0.6575,11,14
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,injury,63,0.4127,0.419,0.4458,0.5177,0.5714,25,2
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,blood/immune (D50-D89),58,0.431,0.4552,0.5935,0.5879,0.6552,14,6
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,congenital,46,0.5217,0.5149,0.668,0.6278,0.587,11,8
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,injury/poisoning,34,0.3529,0.4912,0.5303,0.6269,0.5294,4,12
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,health-status factors (only code),26,0.5769,0.5365,,,0.6154,3,7
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,external causes,13,0.6154,0.4756,,,0.5385,5,1
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,D (unresolved),11,0.6364,0.3082,,,0.3636,7,0
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",2,perinatal (only code),4,1.0,0.4448,,,0.0,4,0
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,ALL,1146,0.7496,0.6735,0.8598,0.7057,0.733,124,182
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,endocrine/metabolic,200,0.855,0.761,0.9297,0.7444,0.84,11,21
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,cancer,183,0.6011,0.4053,0.6928,0.6161,0.5137,73,16
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,infectious,162,0.8395,0.7145,0.9075,0.6932,0.821,9,20
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,nervous system,149,0.6443,0.6821,0.7825,0.71,0.7114,8,35
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,digestive,137,0.7591,0.7051,0.8665,0.6779,0.7737,10,21
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,neoplasm in situ/benign (D00-D49),118,0.6102,0.3334,0.7426,0.6751,0.4492,64,1
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,respiratory,109,0.7523,0.7589,0.7629,0.5443,0.7064,8,24
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,genitourinary,108,0.787,0.7578,0.8589,0.6931,0.7778,4,20
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,pregnancy,107,0.8785,0.796,0.9281,0.6915,0.8692,3,11
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,mental,92,0.7283,0.6918,0.801,0.6522,0.7065,4,23
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,musculoskeletal,82,0.8415,0.7373,0.9281,0.7336,0.8537,3,9
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,circulatory,80,0.6625,0.6398,0.7007,0.508,0.5125,16,23
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,symptoms,77,0.7403,0.6793,0.8529,0.6719,0.6753,8,17
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,eye/ear,63,0.6825,0.7113,0.7824,0.6645,0.7143,1,17
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,skin,62,0.8548,0.7818,0.9832,0.9004,0.8387,3,7
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,blood/immune (D50-D89),40,0.725,0.5065,0.8341,0.6034,0.55,14,4
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,congenital,27,0.7037,0.4659,,,0.3704,12,5
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,health-status factors (only code),21,0.9524,0.586,,,0.9524,0,1
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,injury/poisoning,15,0.5333,0.5656,,,0.4667,2,6
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,injury,10,0.7,0.4596,,,0.3,6,1
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,external causes,6,0.6667,0.4816,,,0.3333,3,1
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,D (unresolved),4,0.5,0.405,,,0.5,2,0
+2026-11-11,"{""blocks"": [""disease""], ""model"": ""xgboost"", ""seed"": 0, ""split"": ""test""}",3,perinatal (only code),2,1.0,0.6746,,,1.0,0,0

@@ -29,7 +29,7 @@ def _setup_logging():
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", "%H:%M:%S")
     root = logging.getLogger()
     root.setLevel(logging.INFO)
-    for h in (logging.StreamHandler(sys.stderr), logging.FileHandler(C.PROCESSED_DIR / "build.log")):
+    for h in (logging.StreamHandler(sys.stderr), logging.FileHandler(C.PROCESSED_DIR / "build.log", encoding="utf-8")):
         h.setFormatter(fmt)
         root.addHandler(h)
 

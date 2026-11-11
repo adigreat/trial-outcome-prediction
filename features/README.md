@@ -12,7 +12,7 @@ python -m features.build fingerprints   # ~5 s, CPU. Writes data/processed/ with
 python -m features.build disease        # ~1 s, CPU
 pip install -r features/requirements-text.txt
 python -m features.build text           # PubMedBERT, GPU recommended. Resumable: just re-run after a crash
-python -m pytest features/tests -q      # 38 tests
+python -m pytest features/tests -q      # 39 tests
 ```
 
 Each step re-writes `data/processed/` as soon as its block is done, so the contract is always

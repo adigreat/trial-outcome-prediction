@@ -40,7 +40,7 @@ def write_raw(folder, rows_by_file):
     cols = ["nctid", "status", "why_stop", "label", "phase", "diseases", "icdcodes", "drugs", "smiless", "criteria"]
     for pn in C.PHASES:
         for s in C.SPLITS:
-            with open(folder / f"phase_{pn}_{s}.csv", "w", newline="") as f:
+            with open(folder / f"phase_{pn}_{s}.csv", "w", newline="", encoding="utf-8") as f:
                 w = csv.DictWriter(f, cols)
                 w.writeheader()
                 w.writerows(rows_by_file.get((pn, s), []))
