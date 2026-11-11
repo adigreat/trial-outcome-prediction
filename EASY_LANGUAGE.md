@@ -142,6 +142,8 @@ What the fusion model tells us:
   for Phase 1 / 2 / 3) and try several guesses for what a lost success is worth.
 
 **New on 2026-11-11 (Ananya)**
+- Ananya's pull request #11 (Windows fix, error analysis, HINT numbers, README draft) was approved by
+  Aditya and merged.
 - Aditya's fusion pull request (#10) was checked, approved and merged. Ananya re-ran part of it on a
   normal processor and got nearly the same numbers (within about 0.02). Fusion results change slightly
   from machine to machine, so we quote the average of 5 runs.
