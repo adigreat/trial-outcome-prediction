@@ -141,7 +141,7 @@ Rows: `results/decision_analysis.csv`.
 
 ## Running it
 
-From the repo root. Tested with Python 3.13 on Linux and Python 3.12 on Windows 11 (x64, with a CUDA GPU); Windows notes are in HANDOFF section 13. `data/` is gitignored; nothing in it is committed.
+From the repo root. Tested with Python 3.13 on Linux, Python 3.12 on Windows 11 (x64, with a CUDA GPU) and Python 3.14 x64 on Windows 11 on ARM (Snapdragon X, under emulation, CPU only); Windows notes are in HANDOFF section 13. git is not needed: `fetch` downloads the data over HTTPS. `data/` is gitignored; nothing in it is committed.
 
 ```bash
 python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -161,6 +161,9 @@ python -m models.decision_run --model fusion --blocks drug,disease,text
 
 Checks: `python -m eval.test_harness`, `python -m eval.test_decision`, `python -m models.test_baselines`,
 `python -m models.test_error_analysis`, `python -m pytest features/tests -q`.
+
+On Windows, if a first run stops with `ImportError: DLL load failed ... An Application Control policy
+has blocked this file`, Smart App Control is checking a newly installed library; run the command again.
 
 The fusion MLP trains on CPU in under a minute per phase. It is not bit-for-bit repeatable across
 machines (CPU and GPU differ in the third decimal), so quote the multi-seed mean.
