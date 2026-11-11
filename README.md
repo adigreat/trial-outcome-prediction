@@ -6,7 +6,7 @@
 Predicts whether a clinical trial will succeed or fail, using only what is known when the trial is
 designed: the drug, the disease, and the eligibility criteria.
 
-<!-- DRAFT (Ananya, 2026-11-11). Marked TODO(Aditya) where the fusion-model write-up is his. -->
+<!-- DRAFT (Ananya, 2026-11-11). Aditya's parts were filled in on 2026-11-11. -->
 
 ## How this differs from most trial-prediction repos
 
@@ -55,16 +55,17 @@ seeds; the spread says nothing about how much the test sample itself would vary.
 |---|---|---|---|---|
 | Always predict success | | 0.553 | 0.555 | 0.750 |
 | XGBoost, drug | 5 | 0.610 ± 0.008 (0.553) | 0.607 ± 0.003 (0.558) | 0.829 ± 0.001 (0.624) |
-| XGBoost, disease | 5 | 0.650 ± 0.004 (0.591) | 0.680 ± 0.003 (0.630) | 0.858 ± 0.001 (0.704) |
+| XGBoost, disease | 5 | 0.649 ± 0.004 (0.591) | 0.680 ± 0.003 (0.630) | 0.858 ± 0.001 (0.704) |
+| XGBoost, text | 5 | 0.634 ± 0.011 (0.596) | 0.672 ± 0.009 (0.625) | 0.846 ± 0.007 (0.672) |
 | XGBoost, drug + disease | 5 | 0.628 ± 0.002 (0.586) | 0.654 ± 0.006 (0.603) | 0.853 ± 0.002 (0.671) |
-| XGBoost, drug + disease + text | 1 | 0.655 (0.616) | 0.668 (0.626) | 0.844 (0.666) |
-| Fusion MLP, text | 5 | 0.682 ± 0.007 (0.636) | 0.682 ± 0.003 (0.640) | 0.862 ± 0.003 (0.691) |
-| Fusion MLP, disease + text | 5 | 0.674 ± 0.009 (0.631) | **0.696** ± 0.005 (0.653) | 0.874 ± 0.003 (0.719) |
-| Fusion MLP, drug + disease + text | 5 | 0.675 ± 0.012 (0.627) | 0.693 ± 0.005 (0.644) | **0.882** ± 0.002 (0.726) |
+| XGBoost, disease + text | 5 | 0.641 ± 0.015 (0.597) | 0.671 ± 0.008 (0.626) | 0.839 ± 0.004 (0.667) |
+| XGBoost, drug + disease + text | 5 | 0.643 ± 0.018 (0.604) | 0.668 ± 0.009 (0.624) | 0.843 ± 0.005 (0.669) |
+| Fusion MLP, text | 5 | 0.682 ± 0.008 (0.636) | 0.682 ± 0.004 (0.640) | 0.862 ± 0.003 (0.691) |
+| Fusion MLP, disease + text | 5 | 0.674 ± 0.010 (0.631) | **0.696** ± 0.005 (0.653) | 0.874 ± 0.004 (0.719) |
+| Fusion MLP, drug + disease + text | 5 | 0.675 ± 0.013 (0.627) | 0.693 ± 0.006 (0.644) | **0.882** ± 0.002 (0.726) |
 
 All seven block combinations for every model, the valid rows and `pr_auc_hint` are in
-[`results/results.csv`](results/results.csv); failed and weak runs stay in it. XGBoost rows with the
-text block have one seed so far.
+[`results/results.csv`](results/results.csv); failed and weak runs stay in it.
 
 **What carries the signal (ablation)**
 
@@ -75,7 +76,10 @@ text block have one seed so far.
 - With XGBoost, stacking blocks does not beat disease alone. With the fusion MLP it does, by about
   0.01 to 0.03 PR-AUC.
 
-<!-- TODO(Aditya): one or two sentences on why fusion combines blocks where XGBoost does not, if you have a view. -->
+Why the fusion MLP combines blocks and XGBoost does not: we did not test this, so it is a guess. The
+fusion MLP gives each block its own encoder with heavy dropout before the blocks meet, so a wide,
+noisy block cannot crowd out a narrow, useful one. XGBoost sees one flat table of 5,567 mostly sparse
+columns for 1,000 to 4,000 training trials per phase, and each extra block mainly adds ways to overfit.
 
 ## Comparison with HINT
 
@@ -108,25 +112,36 @@ no other code, because in TOP they come from the disease-name matching (a diabet
 - **Cancer is the hard area.** It has the lowest success rate (0.44 / 0.46 / 0.60 against 0.55 / 0.56 /
   0.75 overall). The fusion model's ROC-AUC within cancer is 0.55 / 0.59 / 0.57, against 0.63 / 0.65 /
   0.73 overall.
-- **The models are too pessimistic about cancer in Phase III**: they predict about 0.41 to 0.45 success
-  on average, and 60% succeed.
+- **The models are too pessimistic about cancer in Phase III**: the fusion model predicts 0.45 success
+  on average (XGBoost on the disease block 0.41), and 60% succeed.
 - **In situ and benign neoplasms (D00-D49) behave like cancer**, because 81-90% of those trials (by phase)
-  are cancer trials that also carry an in-situ code.
+  are cancer trials that also carry an in-situ code. In Phase III the fusion model is no better than
+  chance inside this group (ROC-AUC 0.47 on 118 trials; it predicts 0.42 where 61% succeed).
+- **Blood and immune disorders (D50-D89)** are a small group (19 / 58 / 40 test trials), too small to
+  say much about.
 
-<!-- TODO(Ananya): rerun the error analysis on the fusion model with the D split and the P/Z rule once text_features.npy is local, and replace the fusion figures above if they move. -->
+The fusion figures are from one run (seed 0, all three blocks).
 
 ## Would a sponsor act on it? (decision analysis)
 
 Not yet. We price a correctly stopped trial at the average per-study cost (ASPE/ERG 2014: $3.8M /
-$13.4M / $19.9M for Phase 1 / 2 / 3) and a wrongly stopped success at 1x, 3x or 10x that. The kill
-threshold is picked on valid and scored on test. The fusion model comes out ahead only when a wrong
-stop costs no more than the trial itself, and only in Phases I and II. Code: `models/decision_run.py`.
+$13.4M / $19.9M for Phase 1 / 2 / 3) and a wrongly stopped success at 1x, 3x or 10x that. The value of
+a lost success has no source we trust, so those multiples are assumptions. The kill threshold is
+picked on valid and scored on test (fusion model, all three blocks, seed 0).
 
-<!-- TODO(Aditya): check this paragraph against your final decision-analysis run. -->
+- **At 1x** the model comes out ahead in Phase I (154 of 627 trials stopped, 59 of them wrongly) and
+  Phase II (839 of 1,654 stopped, 380 wrongly), and behind in Phase III.
+- **At 3x** it is behind in every phase.
+- **At 10x** it stops almost nothing: 11 trials in Phase I (3 of them wrongly, so still behind), 2 in
+  Phase II and none in Phase III.
+
+So the model is only useful if wrongly stopping a successful trial costs no more than running it,
+which is not a realistic assumption for a drug that would have worked. Code: `models/decision_run.py`.
+Rows: `results/decision_analysis.csv`.
 
 ## Running it
 
-From the repo root. Tested with Python 3.13 on Linux; Windows notes are in HANDOFF section 13. `data/` is gitignored; nothing in it is committed.
+From the repo root. Tested with Python 3.13 on Linux and Python 3.12 on Windows 11 (x64, with a CUDA GPU); Windows notes are in HANDOFF section 13. `data/` is gitignored; nothing in it is committed.
 
 ```bash
 python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
