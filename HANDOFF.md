@@ -296,6 +296,8 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-11 | Aditya ran the two items Ananya was blocked on for lack of `text_features.npy`: logreg and XGBoost seeds 1 to 4 for text, drug+text, disease+text and drug+disease+text (192 rows), and the fusion error analysis with the D split and P/Z rule. Every model and block combination now has 5 seeds | Aditya |
 | 2026-11-11 | Spreads in the README are sample standard deviations (n - 1) everywhere, to match the HINT table. The fusion table in section 13 was written with the population formula, so a few of its spreads are 0.001 smaller | Aditya |
 | 2026-11-11 | HINT's Table 2 numbers and its metric code were checked a second time by Aditya: the paper's full text from Europe PMC (PMC9024011) and `HINT/model.py` at commit `8dc0497`. Both agree with section 8 | Aditya |
+| 2026-11-11 | Answer to Ananya: the P/Z side-effect codes stay in the disease features, as TOP gives them. Removing them would mean a new disease block and rerunning every result, for codes the models can learn to ignore. The README limits section already says we document this and do not fix it | Aditya |
+| 2026-11-11 | Ananya's PR #11 approved by Aditya (reviewed at commit `b27769d`) | Aditya |
 
 ---
 
@@ -311,7 +313,7 @@ Append here. Newest at the bottom. One line each.
 - [x] (Aditya) 106 trials in train for one phase and valid for another: keep them (section 9, 2026-11-10).
 - [x] (Aditya) Disease block as a multi-hot: fine as is (section 9, 2026-11-10).
 - [x] (Ananya) ICD chapter P / Z counts: real in TOP, side effects of its disease-name matching, not our parsing (section 9, 2026-11-11).
-- [ ] (Aditya) Do you want the P/Z side-effect codes removed from the disease *features* too (a features change, so a new block and new runs), or left as TOP gives them? Ananya's default: leave them; the model can learn they carry little.
+- [x] (Aditya) P/Z side-effect codes in the disease *features*: keep them, as TOP gives them (section 9, 2026-11-11). No rebuild, no new runs.
 - [x] Fingerprints shipped 2026-11-10: `python -m features.build fingerprints`, see `features/README.md`. Disease block also ready; text pending a GPU run on Ananya's machine
 
 ---
@@ -493,8 +495,8 @@ Phase I decision made (report all three).
   rows with no duplicates.
 - README: both `TODO(Aditya)` notes filled, results table completed, error-analysis and
   decision-analysis sections updated, spreads made consistent.
-- The section 10 question about P/Z codes in the disease features is still open: it is Aditya's to
-  answer and he has not answered it yet.
+- The section 10 question about P/Z codes in the disease features is answered: keep them (section 9).
+  Section 10 has no open questions left.
 - Ananya no longer needs `text_features.npy` for any run. She needs it only if she wants the text
   block in her laptop fresh-clone test without a multi-hour CPU build.
 
@@ -583,7 +585,7 @@ python -m features.build text           # PubMedBERT, about 25 min on a 6 GB GPU
 4. Finish the README: Aditya's parts are filled (2026-11-11). Remove the DRAFT comment when you are happy with it.
 
 **Next up, Person B (Aditya), in `eval/` and `models/`:**
-1. Answer the section 10 question (keep or drop the P/Z side-effect codes in the disease features).
+1. DONE 2026-11-11: section 10 question answered (the P/Z codes stay in the disease features).
 2. Optional: send `text_features.npy` to Ananya directly (Drive or similar, never git) for her laptop
    test. No run is blocked on it any more.
 3. DONE: fusion MLP with ablation, error and decision analysis; README parts; review of Ananya's PR.
