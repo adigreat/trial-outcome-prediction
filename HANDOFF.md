@@ -297,7 +297,7 @@ Append here. Newest at the bottom. One line each.
 | 2026-11-11 | Spreads in the README are sample standard deviations (n - 1) everywhere, to match the HINT table. The fusion table in section 13 was written with the population formula, so a few of its spreads are 0.001 smaller | Aditya |
 | 2026-11-11 | HINT's Table 2 numbers and its metric code were checked a second time by Aditya: the paper's full text from Europe PMC (PMC9024011) and `HINT/model.py` at commit `8dc0497`. Both agree with section 8 | Aditya |
 | 2026-11-11 | Answer to Ananya: the P/Z side-effect codes stay in the disease features, as TOP gives them. Removing them would mean a new disease block and rerunning every result, for codes the models can learn to ignore. The README limits section already says we document this and do not fix it | Aditya |
-| 2026-11-11 | Ananya's PR #11 approved by Aditya (reviewed at commit `b27769d`) | Aditya |
+| 2026-11-11 | Ananya's PR #11 approved by Aditya (reviewed at commit `b27769d`) and merged normally (no admin merge) | Aditya |
 
 ---
 
@@ -347,7 +347,7 @@ where you left off.
 
 **Last updated:** 2026-11-11, by Aditya, after Ananya's session the same day. Both
 sessions are summarised under "Where we stopped (2026-11-11)".
-PRs #3 to #10 are merged into `main` (#9 and #10 on 2026-11-10/11; #10 approved by Ananya). #3 to #7 were admin-merged on Aditya's instruction, without a
+PRs #3 to #11 are merged into `main` (#9 and #10 on 2026-11-10/11; #10 approved by Ananya; #11 approved by Aditya, merged 2026-11-11). #3 to #7 were admin-merged on Aditya's instruction, without a
 review from the other person. #8 was approved by Ananya and merged normally. **The work was
 redistributed on 2026-11-10: see the table in section 4 and the two "Next up" lists below.**
 The fusion model is built, run and merged (PR #10). For #6 (Ananya's features pipeline), Aditya first merged `main`
