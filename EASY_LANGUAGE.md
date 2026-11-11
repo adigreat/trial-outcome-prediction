@@ -1,6 +1,6 @@
 # The project in easy language
 
-Written for Ananya and Aditya. Last updated: 2026-11-11 (HINT numbers found, Windows fix, error analysis updated, README drafted).
+Written for Ananya and Aditya. Last updated: 2026-11-11 (HINT numbers found, Windows fix, all runs have 5 seeds, README nearly done).
 
 `HANDOFF.md` is still the source of truth. This file is the same story in plain words.
 If the two disagree, `HANDOFF.md` wins, and please fix this file.
@@ -142,6 +142,8 @@ What the fusion model tells us:
   for Phase 1 / 2 / 3) and try several guesses for what a lost success is worth.
 
 **New on 2026-11-11 (Ananya)**
+- Ananya's pull request #11 (Windows fix, error analysis, HINT numbers, README draft) was approved by
+  Aditya and merged.
 - Aditya's fusion pull request (#10) was checked, approved and merged. Ananya re-ran part of it on a
   normal processor and got nearly the same numbers (within about 0.02). Fusion results change slightly
   from machine to machine, so we quote the average of 5 runs.
@@ -163,11 +165,19 @@ What the fusion model tells us:
   `torch` in `requirements.txt`. Now added.
 - **README drafted.** Gaps for Aditya are marked `TODO(Aditya)`.
 
+**Also on 2026-11-11 (Aditya)**
+- Ananya's pull request was checked on Aditya's Windows machine: every check passes, and the Windows
+  crash is gone.
+- HINT's numbers were checked a second time against the published paper. They are right.
+- Aditya ran the two things Ananya could not run without the text file: XGBoost with 5 runs for the
+  combinations that use text, and the error analysis on the fusion model with the new D split.
+  **Every model now has 5 runs.** XGBoost with all three blocks gets 0.64 / 0.67 / 0.84, so the fusion
+  model (0.68 / 0.69 / 0.88) is ahead by about 0.03 to 0.04.
+- The README is filled in: Aditya's two gaps are written, and the tables are complete.
+
 **Not done yet**
-- XGBoost runs with the text block (needs `text_features.npy` from Aditya).
-- The error analysis on the fusion model with the new D split (also needs the text file).
 - The fresh-clone test on Ananya's Windows laptop.
-- Aditya's parts of the README.
+- A last read of the README by Ananya.
 
 ## 7. Next steps, why, and how
 
@@ -175,24 +185,20 @@ What the fusion model tells us:
 Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
 1. **Done 2026-11-11:** Windows fix, P/Z answer, D split, HINT numbers, README draft, fresh-clone test on
    Linux, more XGBoost runs without text.
-2. **When Aditya sends `text_features.npy`:** put it in `data/processed/`, check that
-   `load_contract("data/processed")` passes, then
-   - run XGBoost with seeds 1 to 4 for the four combinations that use text, and
-   - rerun `python -m models.error_analysis --model fusion --blocks drug,disease,text`.
-   *Why:* these are the last numbers missing from the README.
+2. **Done by Aditya:** the XGBoost runs with text and the fusion error analysis. Please check how he
+   worded your error-analysis section in the README.
 3. **Fresh-clone test on your laptop.**
    *Why:* Windows on ARM is a different kind of machine, and nobody has tried a clean install there.
    *How:* clone, make a venv, `pip install -r requirements.txt -r features/requirements.txt`, build,
    run the checks. If a package will not install, try the x64 Python build. Write down what happened.
-4. **Finish the README** once Aditya has filled his parts.
+4. **Finish the README.** Aditya's parts are filled. Remove the DRAFT note when you are happy.
 
 ### Aditya
-1. **Send `text_features.npy` to Ananya** (Drive or similar, never git). She still needs it.
-2. **Done: the fusion model**, with the ablation, error analysis and decision analysis on it.
-3. **Fill the two `TODO(Aditya)` notes in the README draft.**
-4. **Answer one question:** should the noisy P/Z codes also be taken out of the disease *features*?
-   Ananya's default is to leave them in.
-5. **Review Ananya's pull request.**
+1. **Answered 2026-11-11:** the noisy P/Z codes stay in the disease *features*. Taking them out would
+   mean rebuilding the disease block and redoing every run.
+2. **Optional: send `text_features.npy` to Ananya** (Drive or similar, never git). No run needs it any
+   more; it only saves her a long build on her laptop.
+3. **Done:** the fusion model and its analyses, the README gaps, and the review of Ananya's pull request.
 
 ## 8. About the HINT comparison (be careful here)
 
