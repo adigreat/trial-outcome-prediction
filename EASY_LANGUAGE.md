@@ -175,7 +175,6 @@ What the fusion model tells us:
 
 **Not done yet**
 - The fresh-clone test on Ananya's Windows laptop.
-- One open question for Aditya (the P/Z codes, see below).
 - A last read of the README by Ananya.
 
 ## 7. Next steps, why, and how
@@ -193,8 +192,8 @@ Nothing here needs a GPU. Your laptop (Snapdragon X, 16 GB RAM) is enough.
 4. **Finish the README.** Aditya's parts are filled. Remove the DRAFT note when you are happy.
 
 ### Aditya
-1. **Answer one question:** should the noisy P/Z codes also be taken out of the disease *features*?
-   Ananya's default is to leave them in.
+1. **Answered 2026-11-11:** the noisy P/Z codes stay in the disease *features*. Taking them out would
+   mean rebuilding the disease block and redoing every run.
 2. **Optional: send `text_features.npy` to Ananya** (Drive or similar, never git). No run needs it any
    more; it only saves her a long build on her laptop.
 3. **Done:** the fusion model and its analyses, the README gaps, and the review of Ananya's pull request.
